@@ -31,5 +31,6 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": ["sharp", "unrs-resolver", "esbuild", "workerd"]
-  }
+  },
+  "packageManager": "pnpm@11.1.2"
 }
