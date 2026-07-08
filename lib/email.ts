@@ -51,6 +51,13 @@ async function resendSend(payload: {
       console.error(`[email] Resend ${res.status}: ${body}`);
       return { ok: false, message: `Resend ${res.status}` };
     }
+
+    // Bump the counter for the usage widget. Never fail the send if this errors.
+    try {
+      await getSupabasePublic().rpc("increment_email_count");
+    } catch (err) {
+      console.warn("[email] failed to bump counter:", err);
+    }
     return { ok: true };
   } catch (err) {
     console.error("[email] send error:", err);

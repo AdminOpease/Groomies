@@ -92,6 +92,9 @@ export function Footer({ settings }: { settings: Settings }) {
             <Link href="/terms" className="hover:text-stone-800">
               Terms
             </Link>
+            <Link href="/refund" className="hover:text-stone-800">
+              Refunds
+            </Link>
           </div>
         </div>
       </div>

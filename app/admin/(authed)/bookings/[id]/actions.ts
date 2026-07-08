@@ -38,6 +38,24 @@ export async function markBookingNoShow(bookingId: string) {
   return updateStatus(bookingId, "no_show");
 }
 
+export async function anonymiseBooking(
+  bookingId: string
+): Promise<AdminBookingState> {
+  const supabase = await getSupabaseServer();
+  const { error } = await supabase.rpc("anonymise_booking", {
+    p_booking_id: bookingId,
+  });
+  if (error) {
+    if (error.message.includes("BOOKING_NOT_FOUND")) {
+      return { ok: false, message: "This booking no longer exists." };
+    }
+    return { ok: false, message: error.message };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  return ok;
+}
+
 export async function moveBooking(
   bookingId: string,
   newSlotId: string

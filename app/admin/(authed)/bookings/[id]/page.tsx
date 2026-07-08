@@ -4,6 +4,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatDateLondon, formatTime } from "@/lib/format";
 import { StatusActions } from "./_components/StatusActions";
 import { MoveBooking } from "./_components/MoveBooking";
+import { AnonymiseBooking } from "./_components/AnonymiseBooking";
 
 export const dynamic = "force-dynamic";
 
@@ -170,6 +171,10 @@ export default async function BookingDetailPage({
         bookingId={b.id}
         currentSlotId={b.time_slot.id}
         currentStatus={b.status}
+      />
+      <AnonymiseBooking
+        bookingId={b.id}
+        alreadyErased={b.customer_email === "anonymised@removed.local"}
       />
     </div>
   );

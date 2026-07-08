@@ -2,6 +2,16 @@ import Link from "next/link";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { formatDateLondon, formatTime, todayLondonISO } from "@/lib/format";
 
+type UsageStats = {
+  db_size_mb: number;
+  db_free_limit_mb: number;
+  emails_month: number;
+  emails_month_limit: number;
+  emails_day: number;
+  emails_day_limit: number;
+  bookings_total: number;
+};
+
 export const dynamic = "force-dynamic";
 
 type UpcomingBooking = {
@@ -31,6 +41,7 @@ export default async function AdminDashboard() {
     { data: weekBookings },
     { data: upcomingDates },
     { data: upcoming },
+    { data: usageRaw },
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -67,7 +78,9 @@ export default async function AdminDashboard() {
       .in("status", ["pending", "confirmed"])
       .gte("time_slot.location_date.service_date", today)
       .limit(500),
+    supabase.rpc("get_usage_stats"),
   ]);
+  const usage = (usageRaw as UsageStats | null) ?? null;
 
   // upcoming already filtered server-side; slice to next 5 by earliest slot.
   const upcomingSorted = ((upcoming ?? []) as unknown as UpcomingBooking[])
@@ -102,6 +115,35 @@ export default async function AdminDashboard() {
         <StatCard label="This week" value={weekBookings?.length ?? 0} sub="Active bookings" />
         <StatCard label="Days out" value={upcomingDates?.length ?? 0} sub="Next 7 days" />
       </section>
+
+      {usage ? (
+        <section>
+          <h2 className="text-lg font-semibold text-stone-900 mb-3">
+            Usage this month
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <UsageMeter
+              label="Database"
+              value={usage.db_size_mb}
+              limit={usage.db_free_limit_mb}
+              unit="MB"
+              hint="Supabase free tier"
+            />
+            <UsageMeter
+              label="Emails this month"
+              value={usage.emails_month}
+              limit={usage.emails_month_limit}
+              hint="Resend free tier"
+            />
+            <UsageMeter
+              label="Emails today"
+              value={usage.emails_day}
+              limit={usage.emails_day_limit}
+              hint="Resend daily cap"
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section>
         <div className="flex items-center justify-between mb-3">
@@ -175,6 +217,49 @@ function StatCard({
         {value}
       </div>
       {sub ? <div className="mt-0.5 text-xs text-stone-500">{sub}</div> : null}
+    </div>
+  );
+}
+
+function UsageMeter({
+  label,
+  value,
+  limit,
+  unit,
+  hint,
+}: {
+  label: string;
+  value: number;
+  limit: number;
+  unit?: string;
+  hint?: string;
+}) {
+  const pct = Math.min(100, Math.round((value / limit) * 100));
+  const warn = pct >= 80;
+  const bar = warn ? "bg-amber-500" : "bg-emerald-500";
+  const text = warn ? "text-amber-800" : "text-stone-900";
+  return (
+    <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 sm:p-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="text-xs text-stone-500 uppercase tracking-wider">
+          {label}
+        </div>
+        <div className={`text-xs font-semibold tabular-nums ${text}`}>
+          {pct}%
+        </div>
+      </div>
+      <div className={`mt-2 text-xl font-semibold tabular-nums ${text}`}>
+        {value}
+        {unit ? ` ${unit}` : ""}{" "}
+        <span className="text-sm font-normal text-stone-400">
+          / {limit}
+          {unit ? ` ${unit}` : ""}
+        </span>
+      </div>
+      <div className="mt-2 h-1.5 rounded-full bg-stone-100 overflow-hidden">
+        <div className={`h-full ${bar}`} style={{ width: `${pct}%` }} />
+      </div>
+      {hint ? <div className="mt-2 text-xs text-stone-500">{hint}</div> : null}
     </div>
   );
 }
