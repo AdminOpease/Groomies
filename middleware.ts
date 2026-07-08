@@ -1,7 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+// Next.js 16 introduced `proxy.ts` as the replacement for `middleware.ts`,
+// but proxy.ts is Node.js-only by design — and OpenNext Cloudflare Workers
+// only support Edge runtime. So we stay on the deprecated (but functional)
+// middleware.ts convention, which is Edge by default. The deprecation
+// warning at build time is harmless until Cloudflare supports Node runtime
+// or Next.js allows Edge proxies.
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
