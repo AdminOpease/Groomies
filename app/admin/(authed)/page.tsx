@@ -48,14 +48,20 @@ export default async function AdminDashboard() {
             </div>
           </li>
           <li className="flex gap-3">
-            <span className="flex-none w-6 h-6 rounded-full bg-stone-100 text-stone-500 text-sm font-medium flex items-center justify-center">
+            <span className="flex-none w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium flex items-center justify-center">
               2
             </span>
             <div>
-              <span className="font-medium text-stone-400">
-                Open up dates + slots
-              </span>
-              <p className="text-sm text-stone-500">Coming in Phase 4.</p>
+              <Link
+                href="/admin/locations"
+                className="font-medium text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
+              >
+                Open up dates and time slots
+              </Link>
+              <p className="text-sm text-stone-500">
+                From any location, click <strong>Manage schedule</strong> to add
+                dates one by one or generate weeks in bulk.
+              </p>
             </div>
           </li>
           <li className="flex gap-3">

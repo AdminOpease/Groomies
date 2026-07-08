@@ -45,16 +45,26 @@ export default async function EditLocationPage({
         </Link>{" "}
         / <span aria-current="page">{location.name}</span>
       </nav>
-      <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-6">
-        Edit location
-      </h1>
+
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          Edit location
+        </h1>
+        <Link
+          href={`/admin/locations/${id}/dates`}
+          className="inline-flex items-center rounded-lg bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 text-sm font-medium px-4 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2"
+        >
+          Manage schedule →
+        </Link>
+      </div>
 
       {created ? (
         <p
           role="status"
           className="mb-4 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"
         >
-          Location created. You can now open up dates and slots on it in Phase 4.
+          Location created. Next: click <strong>Manage schedule</strong> above
+          to open up dates and slots.
         </p>
       ) : null}
 
