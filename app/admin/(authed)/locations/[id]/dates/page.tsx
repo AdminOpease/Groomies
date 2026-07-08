@@ -243,7 +243,7 @@ export default async function DatesPage({
                             <span className="text-sm text-stone-800 tabular-nums">
                               {formatTime(s.start_time)}–{formatTime(s.end_time)}
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                               <span className="text-sm text-stone-600 tabular-nums">
                                 {booked}/{s.max_appointments}
                               </span>
@@ -251,7 +251,14 @@ export default async function DatesPage({
                                 <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
                                   full
                                 </span>
-                              ) : null}
+                              ) : (
+                                <Link
+                                  href={`/admin/bookings/new?slot=${s.id}`}
+                                  className="text-xs text-emerald-700 hover:text-emerald-800 underline underline-offset-2"
+                                >
+                                  Book manually
+                                </Link>
+                              )}
                             </div>
                           </li>
                         );

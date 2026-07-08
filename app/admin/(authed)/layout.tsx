@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 
 const NAV_ITEMS: Array<{ href: string; label: string; ownerOnly?: boolean }> = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/locations", label: "Locations" },
+  { href: "/admin/services", label: "Services" },
+  { href: "/admin/settings", label: "Settings", ownerOnly: true },
   { href: "/admin/staff", label: "Staff", ownerOnly: true },
 ];
 
