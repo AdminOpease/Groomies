@@ -25,7 +25,13 @@ type State =
   | { status: "error" }
   | { status: "ready"; dates: DateGroup[] };
 
-export function LocationSchedule({ locationId }: { locationId: string }) {
+export function LocationSchedule({
+  locationId,
+  showSlotCounts,
+}: {
+  locationId: string;
+  showSlotCounts: boolean;
+}) {
   const [state, setState] = useState<State>({ status: "loading" });
   const reduce = useReducedMotion();
 
@@ -153,10 +159,15 @@ export function LocationSchedule({ locationId }: { locationId: string }) {
             <h3 className="text-lg font-semibold text-stone-900">
               {formatDateLondon(d.service_date)}
             </h3>
-            <span className="text-sm text-stone-500 tabular-nums">
-              {d.slots.reduce((n, s) => n + s.remaining, 0)} slot
-              {d.slots.reduce((n, s) => n + s.remaining, 0) === 1 ? "" : "s"} left
-            </span>
+            {showSlotCounts ? (
+              <span className="text-sm text-stone-500 tabular-nums">
+                {d.slots.reduce((n, s) => n + s.remaining, 0)} slot
+                {d.slots.reduce((n, s) => n + s.remaining, 0) === 1
+                  ? ""
+                  : "s"}{" "}
+                left
+              </span>
+            ) : null}
           </header>
           <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 sm:p-4">
             {d.slots.map((s) => {
@@ -181,9 +192,11 @@ export function LocationSchedule({ locationId }: { locationId: string }) {
                       <span className="tabular-nums font-medium">
                         {formatTime(s.start_time)}
                       </span>
-                      <span className="mt-0.5 text-xs text-emerald-700">
-                        {s.remaining} left
-                      </span>
+                      {showSlotCounts ? (
+                        <span className="mt-0.5 text-xs text-emerald-700">
+                          {s.remaining} left
+                        </span>
+                      ) : null}
                     </Link>
                   )}
                 </li>

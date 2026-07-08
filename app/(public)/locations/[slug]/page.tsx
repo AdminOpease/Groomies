@@ -28,6 +28,15 @@ async function fetchLocation(slug: string) {
   return data;
 }
 
+async function fetchShowSlotCounts(): Promise<boolean> {
+  const supabase = getSupabasePublic();
+  const { data } = await supabase
+    .from("public_business_settings")
+    .select("show_slot_counts")
+    .single();
+  return data?.show_slot_counts ?? true;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -50,7 +59,10 @@ export default async function LocationPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const location = await fetchLocation(slug);
+  const [location, showSlotCounts] = await Promise.all([
+    fetchLocation(slug),
+    fetchShowSlotCounts(),
+  ]);
   if (!location) notFound();
 
   return (
@@ -89,7 +101,10 @@ export default async function LocationPage({
           <h2 className="text-sm font-semibold text-stone-900 mb-3">
             Available dates
           </h2>
-          <LocationSchedule locationId={location.id} />
+          <LocationSchedule
+            locationId={location.id}
+            showSlotCounts={showSlotCounts}
+          />
         </section>
       </FadeIn>
     </div>

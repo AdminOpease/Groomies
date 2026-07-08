@@ -13,11 +13,18 @@ export const metadata: Metadata = {
 
 export default async function LocationsPage() {
   const supabase = getSupabasePublic();
-  const { data: locations } = await supabase
-    .from("locations")
-    .select("id, slug, name, type, description, address")
-    .eq("is_active", true)
-    .order("name");
+  const [{ data: locations }, { data: settings }] = await Promise.all([
+    supabase
+      .from("locations")
+      .select("id, slug, name, type, description, address")
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("public_business_settings")
+      .select("show_slot_counts")
+      .single(),
+  ]);
+  const showSlotCounts = settings?.show_slot_counts ?? true;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
@@ -37,7 +44,10 @@ export default async function LocationsPage() {
       </FadeIn>
 
       <div className="mt-12">
-        <LocationsBrowser locations={locations ?? []} />
+        <LocationsBrowser
+          locations={locations ?? []}
+          showSlotCounts={showSlotCounts}
+        />
       </div>
     </div>
   );

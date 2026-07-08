@@ -65,6 +65,7 @@ export async function updateBusinessSettings(
       60,
       15
     ),
+    show_slot_counts: formData.get("show_slot_counts") === "on",
   };
 
   const { error } = await supabase

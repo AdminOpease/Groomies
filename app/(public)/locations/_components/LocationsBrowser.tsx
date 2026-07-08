@@ -25,7 +25,13 @@ type AvailabilityState =
   | { status: "error" }
   | { status: "ready"; byLocation: Map<string, Availability> };
 
-export function LocationsBrowser({ locations }: { locations: Location[] }) {
+export function LocationsBrowser({
+  locations,
+  showSlotCounts,
+}: {
+  locations: Location[];
+  showSlotCounts: boolean;
+}) {
   const [state, setState] = useState<AvailabilityState>({ status: "loading" });
   const reduce = useReducedMotion();
 
@@ -164,7 +170,11 @@ export function LocationsBrowser({ locations }: { locations: Location[] }) {
               ) : null}
 
               <div className="mt-4">
-                <AvailabilityBadge state={state} availability={availability} />
+                <AvailabilityBadge
+                  state={state}
+                  availability={availability}
+                  showSlotCounts={showSlotCounts}
+                />
               </div>
             </Link>
           </motion.li>
@@ -177,9 +187,11 @@ export function LocationsBrowser({ locations }: { locations: Location[] }) {
 function AvailabilityBadge({
   state,
   availability,
+  showSlotCounts,
 }: {
   state: AvailabilityState;
   availability: Availability | undefined;
+  showSlotCounts: boolean;
 }) {
   if (state.status === "loading") {
     return (
@@ -207,9 +219,12 @@ function AvailabilityBadge({
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium px-2.5 py-1">
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-      Next: {formatDateLondon(availability.nextDate)} ·{" "}
-      {availability.totalRemaining} slot
-      {availability.totalRemaining === 1 ? "" : "s"} left
+      Next: {formatDateLondon(availability.nextDate)}
+      {showSlotCounts
+        ? ` · ${availability.totalRemaining} slot${
+            availability.totalRemaining === 1 ? "" : "s"
+          } left`
+        : ""}
     </span>
   );
 }

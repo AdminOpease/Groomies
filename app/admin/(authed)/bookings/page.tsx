@@ -66,12 +66,14 @@ export default async function BookingsPage({
     status?: StatusFilter;
     location?: string;
     range?: RangeFilter;
+    q?: string;
   }>;
 }) {
   const sp = await searchParams;
   const status = (sp.status ?? "active") as StatusFilter;
   const locationId = sp.location ?? "";
   const range = (sp.range ?? "week") as RangeFilter;
+  const q = (sp.q ?? "").trim();
 
   const supabase = await getSupabaseServer();
 
@@ -81,7 +83,8 @@ export default async function BookingsPage({
     .select("id, name")
     .order("name");
 
-  const { from, to, order } = computeRange(range);
+  // When searching, ignore the date range so results surface wherever they are.
+  const { from, to, order } = computeRange(q ? "all_future" : range);
 
   // Query: bookings joined to slot → date → location, and optional service.
   // We filter by service_date at the SQL level via the nested inner join.
@@ -110,6 +113,21 @@ export default async function BookingsPage({
   }
   if (from) query = query.gte("time_slot.location_date.service_date", from);
   if (to) query = query.lte("time_slot.location_date.service_date", to);
+
+  if (q) {
+    // Escape SQL wildcards the user may have typed so they act as literals.
+    const escaped = q.replace(/[%_]/g, (m) => `\\${m}`);
+    const term = `%${escaped}%`;
+    query = query.or(
+      [
+        `booking_reference.ilike.${term}`,
+        `customer_name.ilike.${term}`,
+        `customer_email.ilike.${term}`,
+        `customer_phone.ilike.${term}`,
+        `pet_name.ilike.${term}`,
+      ].join(",")
+    );
+  }
 
   const { data: rawRows, error } = await query;
 

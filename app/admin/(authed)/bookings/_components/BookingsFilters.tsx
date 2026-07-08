@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 type Location = { id: string; name: string };
 
@@ -10,57 +10,134 @@ export function BookingsFilters({ locations }: { locations: Location[] }) {
   const search = useSearchParams();
   const [pending, startTransition] = useTransition();
 
-  const setParam = (key: string, value: string) => {
+  const status = search.get("status") ?? "active";
+  const location = search.get("location") ?? "";
+  const range = search.get("range") ?? "week";
+  const initialQuery = search.get("q") ?? "";
+
+  const [query, setQuery] = useState(initialQuery);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasMounted = useRef(false);
+
+  const pushWith = (patch: Record<string, string>) => {
     const next = new URLSearchParams(Array.from(search.entries()));
-    if (!value) next.delete(key);
-    else next.set(key, value);
+    for (const [k, v] of Object.entries(patch)) {
+      if (!v) next.delete(k);
+      else next.set(k, v);
+    }
     startTransition(() => {
       router.push(`/admin/bookings?${next.toString()}`);
     });
   };
 
-  const status = search.get("status") ?? "active";
-  const location = search.get("location") ?? "";
-  const range = search.get("range") ?? "week";
+  // Debounce query updates so we don't fire a request on every keystroke.
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      pushWith({ q: query.trim() });
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   return (
-    <div className="flex flex-wrap items-end gap-3 mb-6">
-      <Group label="When">
-        <Select value={range} onChange={(v) => setParam("range", v)} disabled={pending}>
-          <option value="today">Today</option>
-          <option value="week">This week</option>
-          <option value="month">This month</option>
-          <option value="all_future">All upcoming</option>
-          <option value="past">Past</option>
-        </Select>
-      </Group>
-      <Group label="Status">
-        <Select value={status} onChange={(v) => setParam("status", v)} disabled={pending}>
-          <option value="active">Active (pending + confirmed)</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="pending">Pending</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="expired">Expired</option>
-          <option value="all">All</option>
-        </Select>
-      </Group>
-      {locations.length > 0 ? (
-        <Group label="Location">
+    <div className="space-y-3 mb-6">
+      <div className="relative">
+        <label htmlFor="booking-search" className="sr-only">
+          Search bookings
+        </label>
+        <input
+          id="booking-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by reference, name, email, phone, or pet…"
+          className="block w-full rounded-lg border border-stone-300 bg-white pl-9 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        />
+        <SearchIcon />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-lg leading-none"
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <Group label="When">
           <Select
-            value={location}
-            onChange={(v) => setParam("location", v)}
+            value={range}
+            onChange={(v) => pushWith({ range: v })}
             disabled={pending}
           >
-            <option value="">All locations</option>
-            {locations.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
+            <option value="today">Today</option>
+            <option value="week">This week</option>
+            <option value="month">This month</option>
+            <option value="all_future">All upcoming</option>
+            <option value="past">Past</option>
           </Select>
         </Group>
-      ) : null}
+        <Group label="Status">
+          <Select
+            value={status}
+            onChange={(v) => pushWith({ status: v })}
+            disabled={pending}
+          >
+            <option value="active">Active (pending + confirmed)</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="expired">Expired</option>
+            <option value="all">All</option>
+          </Select>
+        </Group>
+        {locations.length > 0 ? (
+          <Group label="Location">
+            <Select
+              value={location}
+              onChange={(v) => pushWith({ location: v })}
+              disabled={pending}
+            >
+              <option value="">All locations</option>
+              {locations.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </Select>
+          </Group>
+        ) : null}
+      </div>
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
   );
 }
 

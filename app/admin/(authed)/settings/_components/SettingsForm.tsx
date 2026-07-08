@@ -18,6 +18,7 @@ type Settings = {
   retention_months: number;
   refund_cutoff_hours: number;
   hold_duration_minutes: number;
+  show_slot_counts: boolean;
 };
 
 const initial: SettingsState = { ok: true };
@@ -146,6 +147,24 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         title="Booking policies"
         description="Applied to every new booking. Existing bookings aren't affected."
       >
+        <label className="flex items-start gap-3 select-none cursor-pointer">
+          <input
+            type="checkbox"
+            name="show_slot_counts"
+            defaultChecked={settings.show_slot_counts}
+            className="mt-0.5 h-4 w-4 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span>
+            <span className="block text-sm font-medium text-stone-900">
+              Show customers how many slots are left
+            </span>
+            <span className="block text-sm text-stone-500">
+              When off, the public site shows dates and times but not the
+              remaining count. "Fully booked" tags still appear once
+              nothing's available.
+            </span>
+          </span>
+        </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field
             label="Hold duration (minutes)"
