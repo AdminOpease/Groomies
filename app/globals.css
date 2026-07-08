@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
+/*
+ * Brand tokens. Public site skews warm-and-friendly; admin uses the same
+ * palette so components carry across.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafaf9;    /* stone-50 */
+  --foreground: #1c1917;    /* stone-900 */
+  --brand: #059669;         /* emerald-600 */
+  --brand-strong: #047857;  /* emerald-700 */
+  --brand-soft: #ecfdf5;    /* emerald-50 */
+  --brand-warm: #fef3c7;    /* amber-100 — warm accent */
+  --card: #ffffff;
+  --border: #e7e5e4;        /* stone-200 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-warm: var(--brand-warm);
+  --color-card: var(--card);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
