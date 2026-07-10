@@ -11,6 +11,7 @@ type Service = {
   price_cents: number;
   deposit_amount_cents: number | null;
   is_active: boolean;
+  price_from: boolean;
   sort_order: number;
 };
 
@@ -95,6 +96,24 @@ export function ServiceForm({
           />
         </Field>
       </div>
+      <label className="flex items-start gap-3 select-none cursor-pointer">
+        <input
+          type="checkbox"
+          name="price_from"
+          defaultChecked={service?.price_from ?? false}
+          className="mt-0.5 h-4 w-4 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+        />
+        <span>
+          <span className="block text-sm font-medium text-stone-900">
+            Show price as a starting price
+          </span>
+          <span className="block text-sm text-stone-500">
+            Displays “From £X” on the public site — use when the price depends
+            on the dog’s size, coat, or condition.
+          </span>
+        </span>
+      </label>
+
       <Field
         label="Sort order"
         htmlFor="sort_order"

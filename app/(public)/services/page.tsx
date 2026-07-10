@@ -25,6 +25,7 @@ type Service = {
   description: string | null;
   duration_minutes: number;
   price_cents: number;
+  price_from: boolean;
   sort_order: number;
 };
 
@@ -32,7 +33,7 @@ export default async function ServicesPage() {
   const supabase = getSupabasePublic();
   const { data: raw } = await supabase
     .from("services")
-    .select("id, name, description, duration_minutes, price_cents, sort_order")
+    .select("id, name, description, duration_minutes, price_cents, price_from, sort_order")
     .eq("is_active", true)
     .order("sort_order");
   const services = (raw ?? []) as Service[];
@@ -169,6 +170,11 @@ function ServiceSection({
                       {s.name}
                     </h3>
                     <span className="text-xl font-semibold text-emerald-800 tabular-nums whitespace-nowrap">
+                      {s.price_from ? (
+                        <span className="text-sm font-normal text-emerald-800/70">
+                          From{" "}
+                        </span>
+                      ) : null}
                       {formatPrice(s.price_cents)}
                     </span>
                   </div>
@@ -204,6 +210,11 @@ function ServiceSection({
                       ) : null}
                     </div>
                     <span className="text-lg font-semibold text-emerald-800 tabular-nums whitespace-nowrap">
+                      {s.price_from ? (
+                        <span className="text-sm font-normal text-emerald-800/70">
+                          From{" "}
+                        </span>
+                      ) : null}
                       {formatPrice(s.price_cents)}
                     </span>
                   </li>

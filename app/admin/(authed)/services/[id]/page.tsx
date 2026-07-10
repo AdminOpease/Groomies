@@ -21,7 +21,7 @@ export default async function EditServicePage({
   const { data: service, error } = await supabase
     .from("services")
     .select(
-      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, sort_order"
+      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, price_from, sort_order"
     )
     .eq("id", id)
     .single();

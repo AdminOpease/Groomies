@@ -19,7 +19,7 @@ export function Footer({ settings }: { settings: Settings }) {
               <img
                 src={settings.logo_url}
                 alt={settings.business_name}
-                className="h-16 sm:h-20 w-auto"
+                className="h-12 sm:h-14 w-auto"
               />
             ) : (
               <>

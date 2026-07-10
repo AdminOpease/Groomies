@@ -5,6 +5,8 @@ import { FadeIn } from "./_components/FadeIn";
 
 export const revalidate = 3600;
 
+// Brand logo (pre-trimmed to even padding) — same asset the header/footer use.
+const LOGO_SRC = "/Groomies Logo.png";
 // Placeholder editorial photos — swap for the owner's own via Supabase Storage later.
 const HERO_PHOTO = {
   src: "/Image Groomies.png",
@@ -20,6 +22,7 @@ type Service = {
   name: string;
   description: string | null;
   price_cents: number;
+  price_from: boolean;
 };
 
 export default async function HomePage() {
@@ -32,7 +35,7 @@ export default async function HomePage() {
       .order("name"),
     supabase
       .from("services")
-      .select("id, name, description, price_cents, sort_order")
+      .select("id, name, description, price_cents, price_from, sort_order")
       .eq("is_active", true)
       .lt("sort_order", 100)
       .order("sort_order")
@@ -65,7 +68,15 @@ function Hero() {
         <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-10 lg:gap-16 items-center">
           <div>
             <FadeIn>
-              <p className="text-[11px] font-medium text-emerald-800 uppercase tracking-[0.22em]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={LOGO_SRC}
+                alt="Groomies"
+                className="h-20 sm:h-24 w-auto -ml-1"
+              />
+            </FadeIn>
+            <FadeIn delay={0.05}>
+              <p className="mt-6 text-[11px] font-medium text-emerald-800 uppercase tracking-[0.22em]">
                 Mobile dog grooming · UK
               </p>
             </FadeIn>
@@ -234,14 +245,16 @@ function HowItWorks() {
         <ol className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {steps.map((s, i) => (
             <FadeIn key={s.n} delay={i * 0.08}>
-              <li className="group relative h-full rounded-3xl bg-white/70 backdrop-blur border border-emerald-900/10 p-8 sm:p-10 hover:border-emerald-800/40 hover:bg-white transition-all">
-                {/* Big italic numeral watermark */}
+              <li className="group relative h-full overflow-hidden rounded-3xl bg-white/70 backdrop-blur border border-emerald-900/10 p-8 sm:p-10 hover:border-emerald-800/40 hover:bg-white transition-all">
+                {/* Big italic numeral watermark — clipped to the card and
+                    anchored top-right so all three read consistently regardless
+                    of word length. */}
                 <span
                   aria-hidden
-                  className="absolute -top-6 sm:-top-8 right-6 sm:right-8 text-emerald-800/15 group-hover:text-emerald-800/25 transition-colors select-none pointer-events-none italic leading-none"
+                  className="absolute top-2 right-5 text-emerald-800/15 group-hover:text-emerald-800/25 transition-colors select-none pointer-events-none italic leading-none"
                   style={{
                     fontFamily: "var(--font-display), serif",
-                    fontSize: "9rem",
+                    fontSize: "7rem",
                   }}
                 >
                   {s.n}
@@ -320,6 +333,11 @@ function ServicesTeaser({ services }: { services: Service[] }) {
                     {s.name}
                   </h3>
                   <span className="text-xl font-semibold text-emerald-800 tabular-nums whitespace-nowrap">
+                    {s.price_from ? (
+                      <span className="text-sm font-normal text-emerald-800/70">
+                        From{" "}
+                      </span>
+                    ) : null}
                     {formatMoney(s.price_cents)}
                   </span>
                 </div>

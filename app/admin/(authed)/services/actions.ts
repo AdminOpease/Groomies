@@ -55,6 +55,7 @@ function parse(formData: FormData) {
       formData.get("deposit_pence")
     ),
     is_active: formData.get("is_active") === "on",
+    price_from: formData.get("price_from") === "on",
     sort_order: optionalInt(formData.get("sort_order")),
   };
 }
@@ -80,6 +81,7 @@ export async function createService(
 
   revalidatePath("/admin/services");
   revalidatePath("/services");
+  revalidatePath("/");
   redirect(`/admin/services/${data.id}?created=1`);
 }
 
@@ -102,6 +104,7 @@ export async function updateService(
   revalidatePath("/admin/services");
   revalidatePath(`/admin/services/${id}`);
   revalidatePath("/services");
+  revalidatePath("/");
   return { ok: true, message: "Saved." };
 }
 

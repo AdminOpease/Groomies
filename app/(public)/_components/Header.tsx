@@ -17,19 +17,19 @@ export function Header({
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-center justify-between gap-4 py-3">
+        <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href="/"
             className="flex items-center gap-2 font-semibold tracking-tight text-stone-900"
           >
             {logoUrl ? (
-              // Header height flexes to the logo so it always sits centred
-              // with equal breathing room top and bottom — no overflow tricks.
+              // Logo is pre-trimmed to even padding, so it sits centred in the
+              // fixed-height bar with equal breathing room top and bottom.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
                 alt={businessName}
-                className="h-14 sm:h-20 w-auto"
+                className="h-10 sm:h-12 w-auto"
               />
             ) : (
               <>

@@ -21,7 +21,7 @@ export default async function ServicesPage({
   const { data: services, error } = await supabase
     .from("services")
     .select(
-      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, sort_order"
+      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, price_from, sort_order"
     )
     .order("is_active", { ascending: false })
     .order("sort_order")
@@ -108,6 +108,11 @@ export default async function ServicesPage({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-emerald-700 font-semibold tabular-nums">
+                    {s.price_from ? (
+                      <span className="text-xs font-normal text-stone-400">
+                        from{" "}
+                      </span>
+                    ) : null}
                     {formatMoney(s.price_cents)}
                   </span>
                   <span aria-hidden className="text-stone-300">
