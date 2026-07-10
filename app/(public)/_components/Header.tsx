@@ -7,22 +7,41 @@ const NAV = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function Header({ businessName }: { businessName: string }) {
+export function Header({
+  businessName,
+  logoUrl,
+}: {
+  businessName: string;
+  logoUrl: string | null;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 py-3">
           <Link
             href="/"
             className="flex items-center gap-2 font-semibold tracking-tight text-stone-900"
           >
-            <span
-              aria-hidden
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white text-sm font-bold"
-            >
-              G
-            </span>
-            <span>{businessName}</span>
+            {logoUrl ? (
+              // Header height flexes to the logo so it always sits centred
+              // with equal breathing room top and bottom — no overflow tricks.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt={businessName}
+                className="h-14 sm:h-20 w-auto"
+              />
+            ) : (
+              <>
+                <span
+                  aria-hidden
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white text-sm font-bold"
+                >
+                  G
+                </span>
+                <span>{businessName}</span>
+              </>
+            )}
           </Link>
 
           <nav className="hidden sm:flex items-center gap-1">

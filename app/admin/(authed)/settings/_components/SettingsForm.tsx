@@ -45,11 +45,15 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             className={input}
           />
         </Field>
-        <Field label="Logo URL" htmlFor="logo_url" hint="Optional. Public URL of your logo image.">
+        <Field
+          label="Logo URL"
+          htmlFor="logo_url"
+          hint="Optional. Full URL (https://…) or a relative path (e.g. /Groomies Logo.jpg for a file in /public)."
+        >
           <input
             id="logo_url"
             name="logo_url"
-            type="url"
+            type="text"
             defaultValue={settings.logo_url ?? ""}
             className={input}
           />

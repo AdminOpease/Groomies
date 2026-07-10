@@ -2,6 +2,7 @@ import Link from "next/link";
 
 type Settings = {
   business_name: string;
+  logo_url: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   social_links: Record<string, unknown> | null;
@@ -13,13 +14,24 @@ export function Footer({ settings }: { settings: Settings }) {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
         <div>
           <div className="flex items-center gap-2 font-semibold tracking-tight text-stone-900">
-            <span
-              aria-hidden
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white text-sm font-bold"
-            >
-              G
-            </span>
-            <span>{settings.business_name}</span>
+            {settings.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={settings.logo_url}
+                alt={settings.business_name}
+                className="h-16 sm:h-20 w-auto"
+              />
+            ) : (
+              <>
+                <span
+                  aria-hidden
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white text-sm font-bold"
+                >
+                  G
+                </span>
+                <span>{settings.business_name}</span>
+              </>
+            )}
           </div>
           <p className="mt-3 text-sm text-stone-500">
             Premium mobile pet grooming — we come to you.

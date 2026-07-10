@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Brand tokens. Public site skews warm-and-friendly; admin uses the same
- * palette so components carry across.
+ * Brand palette — olive + cream, matching the Groomies logo and van livery.
+ * We redirect Tailwind's `emerald` colour scale to olive so every existing
+ * bg-emerald-*, text-emerald-*, ring-emerald-* class picks up the brand
+ * without touching individual components.
  */
 
 :root {
-  --background: #fafaf9;    /* stone-50 */
-  --foreground: #1c1917;    /* stone-900 */
-  --brand: #059669;         /* emerald-600 */
-  --brand-strong: #047857;  /* emerald-700 */
-  --brand-soft: #ecfdf5;    /* emerald-50 */
-  --brand-warm: #fef3c7;    /* amber-100 — warm accent */
-  --card: #ffffff;
-  --border: #e7e5e4;        /* stone-200 */
+  --background: #f8f4e6;    /* warm cream */
+  --foreground: #2b2a20;    /* dark olive-charcoal */
+  --brand: #6d7042;         /* olive */
+  --brand-strong: #545732;  /* deeper olive */
+  --brand-soft: #f5f1e0;    /* cream / soft brand bg */
+  --brand-warm: #ede7c9;    /* light cream accent */
+  --card: #fdfcf7;          /* slightly whiter cream for cards */
+  --border: #e4ddc5;        /* warm border */
 }
 
 @theme inline {
@@ -26,6 +28,19 @@
   --color-card: var(--card);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+
+  /* Redirect Tailwind's emerald palette to Groomies' olive. */
+  --color-emerald-50:  #f5f1e0;
+  --color-emerald-100: #ede7c9;
+  --color-emerald-200: #d8d0a0;
+  --color-emerald-300: #b9b27a;
+  --color-emerald-400: #9ea26a;
+  --color-emerald-500: #7b7e4a;
+  --color-emerald-600: #6d7042;
+  --color-emerald-700: #545732;
+  --color-emerald-800: #3b3d24;
+  --color-emerald-900: #2b2b14;
 }
 
 html { scroll-behavior: smooth; }

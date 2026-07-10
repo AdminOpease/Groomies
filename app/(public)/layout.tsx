@@ -9,11 +9,12 @@ async function getPublicSettings() {
   const { data } = await supabase
     .from("public_business_settings")
     .select(
-      "business_name, contact_email, contact_phone, social_links, primary_brand_color, about_blurb"
+      "business_name, logo_url, contact_email, contact_phone, social_links, primary_brand_color, about_blurb"
     )
     .single();
   return data ?? {
     business_name: "Groomies",
+    logo_url: null,
     contact_email: null,
     contact_phone: null,
     social_links: null,
@@ -50,7 +51,10 @@ export default async function PublicLayout({
 
   return (
     <>
-      <Header businessName={settings.business_name} />
+      <Header
+        businessName={settings.business_name}
+        logoUrl={settings.logo_url}
+      />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -60,6 +64,7 @@ export default async function PublicLayout({
       <Footer
         settings={{
           business_name: settings.business_name,
+          logo_url: settings.logo_url,
           contact_email: settings.contact_email,
           contact_phone: settings.contact_phone,
           social_links: settings.social_links as Record<string, unknown> | null,

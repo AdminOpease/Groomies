@@ -118,33 +118,44 @@ export default async function BookPage({
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-14">
       <FadeIn>
-        <nav aria-label="Breadcrumb" className="text-sm text-stone-500 mb-3">
+        <nav aria-label="Breadcrumb" className="text-sm text-emerald-800 mb-4">
           <Link
             href={`/locations/${data.location.slug}`}
-            className="hover:text-stone-800 underline underline-offset-2"
+            className="hover:text-emerald-900 underline underline-offset-4"
           >
             {data.location.name}
           </Link>{" "}
           / <span aria-current="page">Book</span>
         </nav>
 
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-stone-900">
-          Confirm your booking
+        <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.18em]">
+          Your booking
+        </p>
+        <h1
+          className="mt-2 text-4xl sm:text-5xl leading-[1.05] text-stone-900"
+          style={{ fontFamily: "var(--font-display), serif" }}
+        >
+          Almost there.
         </h1>
       </FadeIn>
 
       <FadeIn delay={0.05}>
-        <section className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
-          <p className="text-xs font-medium text-emerald-800 uppercase tracking-wider">
+        <section className="mt-8 rounded-3xl border border-emerald-900/10 bg-emerald-50 p-6">
+          <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.18em]">
             Your slot
           </p>
-          <p className="mt-2 text-lg font-semibold text-stone-900">
-            {formatDateLondon(data.date.service_date)} ·{" "}
+          <p
+            className="mt-3 text-2xl text-stone-900"
+            style={{ fontFamily: "var(--font-display), serif" }}
+          >
+            {formatDateLondon(data.date.service_date)}
+          </p>
+          <p className="mt-1 text-lg text-stone-700 tabular-nums">
             {formatTime(data.slot.start_time)}–{formatTime(data.slot.end_time)}
           </p>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-3 text-sm text-stone-600">
             {data.location.name}
-            {data.location.address ? ` — ${data.location.address}` : ""}
+            {data.location.address ? ` · ${data.location.address}` : ""}
           </p>
         </section>
       </FadeIn>

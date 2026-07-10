@@ -66,47 +66,62 @@ export default async function LocationPage({
   if (!location) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">
-      <FadeIn>
-        <nav aria-label="Breadcrumb" className="text-sm text-stone-500 mb-4">
-          <Link
-            href="/locations"
-            className="hover:text-stone-800 underline underline-offset-2"
-          >
-            Locations
-          </Link>{" "}
-          / <span aria-current="page">{location.name}</span>
-        </nav>
+    <div>
+      <section className="bg-emerald-50 border-b border-emerald-900/10">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">
+          <FadeIn>
+            <nav aria-label="Breadcrumb" className="text-sm text-emerald-800 mb-6">
+              <Link
+                href="/locations"
+                className="hover:text-emerald-900 underline underline-offset-4"
+              >
+                Locations
+              </Link>{" "}
+              / <span aria-current="page">{location.name}</span>
+            </nav>
 
-        <div className="flex flex-wrap items-center gap-3 mb-3">
-          <TypeBadge type={location.type} />
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <TypeBadge type={location.type} />
+            </div>
+
+            <h1
+              className="text-5xl sm:text-6xl leading-[1.05] text-stone-900"
+              style={{ fontFamily: "var(--font-display), serif" }}
+            >
+              {location.name}
+            </h1>
+
+            {location.address ? (
+              <p className="mt-4 text-stone-700 text-lg">{location.address}</p>
+            ) : null}
+            {location.description ? (
+              <p className="mt-5 text-stone-700 max-w-2xl">
+                {location.description}
+              </p>
+            ) : null}
+          </FadeIn>
         </div>
+      </section>
 
-        <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-stone-900">
-          {location.name}
-        </h1>
-
-        {location.address ? (
-          <p className="mt-3 text-stone-600">{location.address}</p>
-        ) : null}
-        {location.description ? (
-          <p className="mt-4 text-lg text-stone-700 max-w-2xl">
-            {location.description}
-          </p>
-        ) : null}
-      </FadeIn>
-
-      <FadeIn delay={0.05}>
-        <section className="mt-10">
-          <h2 className="text-sm font-semibold text-stone-900 mb-3">
+      <section className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">
+        <FadeIn delay={0.05}>
+          <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.18em]">
             Available dates
+          </p>
+          <h2
+            className="mt-2 text-3xl text-stone-900"
+            style={{ fontFamily: "var(--font-display), serif" }}
+          >
+            Pick your slot
           </h2>
-          <LocationSchedule
-            locationId={location.id}
-            showSlotCounts={showSlotCounts}
-          />
-        </section>
-      </FadeIn>
+          <div className="mt-8">
+            <LocationSchedule
+              locationId={location.id}
+              showSlotCounts={showSlotCounts}
+            />
+          </div>
+        </FadeIn>
+      </section>
     </div>
   );
 }
