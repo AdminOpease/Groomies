@@ -86,6 +86,77 @@ export async function makeSlot(opts: {
   };
 }
 
+type ServiceFixture = {
+  serviceId: string;
+  variants: { id: string; label: string; priceCents: number }[];
+  cleanup: () => Promise<void>;
+};
+
+/**
+ * Creates an isolated test service, optionally with size tiers.
+ *
+ * Tests own their pricing data rather than leaning on the owner's real
+ * services — otherwise re-pricing a groom in /admin would break the suite.
+ *
+ * Like makeSlot's locations these are active for the few seconds they exist,
+ * so they are named TEST-SVC-* and always cleaned up.
+ */
+export async function makeService(
+  opts: {
+    priceCents?: number;
+    priceFrom?: boolean;
+    tiers?: Array<{ label: string; priceCents: number; priceFrom?: boolean }>;
+  } = {}
+): Promise<ServiceFixture> {
+  const { priceCents = 1000, priceFrom = false, tiers = [] } = opts;
+  const name = `TEST-SVC-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const { data: svc, error: svcErr } = await service
+    .from("services")
+    .insert({
+      name,
+      duration_minutes: 60,
+      price_cents: priceCents,
+      price_from: priceFrom,
+      is_active: true,
+      sort_order: 900,
+    })
+    .select("id")
+    .single();
+  if (svcErr) throw svcErr;
+
+  const variants: ServiceFixture["variants"] = [];
+  if (tiers.length > 0) {
+    const { data: rows, error: varErr } = await service
+      .from("service_variants")
+      .insert(
+        tiers.map((t, i) => ({
+          service_id: svc.id,
+          label: t.label,
+          price_cents: t.priceCents,
+          price_from: t.priceFrom ?? false,
+          sort_order: (i + 1) * 10,
+        }))
+      )
+      .select("id, label, price_cents");
+    if (varErr) throw varErr;
+    variants.push(
+      ...rows.map((r) => ({
+        id: r.id as string,
+        label: r.label as string,
+        priceCents: r.price_cents as number,
+      }))
+    );
+  }
+
+  const cleanup = async () => {
+    await service.from("service_variants").delete().eq("service_id", svc.id);
+    await service.from("services").delete().eq("id", svc.id);
+  };
+
+  return { serviceId: svc.id, variants, cleanup };
+}
+
 export function validBookingArgs(overrides: Record<string, unknown> = {}) {
   return {
     p_service_id: null,
