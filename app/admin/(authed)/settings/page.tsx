@@ -25,7 +25,7 @@ export default async function SettingsPage() {
   const { data: settings, error } = await supabase
     .from("business_settings")
     .select(
-      "business_name, logo_url, contact_email, contact_phone, about_blurb, primary_brand_color, default_service_area_copy, owner_notification_email, technical_billing_alert_email, payments_enabled, deposit_mode, retention_months, refund_cutoff_hours, hold_duration_minutes, show_slot_counts"
+      "business_name, logo_url, contact_email, contact_phone, about_blurb, primary_brand_color, default_service_area_copy, owner_notification_email, technical_billing_alert_email, payments_enabled, deposit_mode, deposit_percent, retention_months, refund_cutoff_hours, hold_duration_minutes, show_slot_counts"
     )
     .eq("id", true)
     .single();

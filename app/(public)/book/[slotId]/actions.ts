@@ -6,6 +6,7 @@ import {
   sendConfirmationEmail,
   sendOwnerNotification,
 } from "@/lib/email";
+import { combineBreeds } from "@/lib/dog-breeds";
 
 export type BookingValues = {
   service_id: string | null;
@@ -17,6 +18,7 @@ export type BookingValues = {
   pet_name: string | null;
   pet_species: string | null;
   pet_breed: string | null;
+  pet_breed_secondary: string | null;
   service_address: string | null;
   notes: string | null;
   consent: boolean;
@@ -133,6 +135,7 @@ export async function submitBooking(
     pet_name: nullIfBlank(formData.get("pet_name")),
     pet_species: nullIfBlank(formData.get("pet_species")),
     pet_breed: nullIfBlank(formData.get("pet_breed")),
+    pet_breed_secondary: nullIfBlank(formData.get("pet_breed_secondary")),
     service_address: nullIfBlank(formData.get("service_address")),
     notes: nullIfBlank(formData.get("notes")),
     consent: formData.get("consent") === "on",
@@ -156,7 +159,10 @@ export async function submitBooking(
       p_customer_phone: required(values.customer_phone, "Phone"),
       p_pet_name: required(values.pet_name, "Pet name"),
       p_pet_species: values.pet_species,
-      p_pet_breed: values.pet_breed,
+      // Stored as one readable value ("Cockapoo × Poodle"). Breed is
+      // informational only, so this avoids changing the book_slot signature
+      // — and a consistent separator keeps it parseable if that changes.
+      p_pet_breed: combineBreeds(values.pet_breed, values.pet_breed_secondary),
       p_service_address: values.service_address,
       p_notes: values.notes,
       p_consent_given: values.consent,

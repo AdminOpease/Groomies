@@ -15,6 +15,7 @@ type Settings = {
   technical_billing_alert_email: string | null;
   payments_enabled: boolean;
   deposit_mode: "off" | "deposit" | "full";
+  deposit_percent: number;
   retention_months: number;
   refund_cutoff_hours: number;
   hold_duration_minutes: number;
@@ -247,10 +248,30 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             className={input}
           >
             <option value="off">Off — no payment collected</option>
-            <option value="deposit">Deposit only (per-service amount)</option>
+            <option value="deposit">Deposit — a percentage of the total</option>
             <option value="full">Full price up-front</option>
           </select>
         </Field>
+        <Field
+          label="Deposit percentage"
+          htmlFor="deposit_percent"
+          hint="Percent of the booking total (service + any extras) taken as a deposit. Only used when deposit mode is “Deposit”."
+        >
+          <input
+            id="deposit_percent"
+            name="deposit_percent"
+            type="number"
+            min="0"
+            max="100"
+            defaultValue={settings.deposit_percent}
+            className={input}
+          />
+        </Field>
+        <p className="text-sm text-stone-500">
+          Deposits are calculated and shown as soon as you set them here.
+          Money is only actually collected once payments are switched on and
+          Stripe is connected.
+        </p>
       </Section>
 
       {state.message ? (

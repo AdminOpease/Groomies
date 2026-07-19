@@ -28,6 +28,31 @@ Wait to create these until handover. They belong in the owner's account from day
 | **Stripe** — https://stripe.com | Deposits and full payments when the owner enables them | No monthly fee. ~1.5% + 20p per transaction. Owner needs business bank details to complete signup. Only needed when `business_settings.payments_enabled = true`. |
 | **Cloudflare Turnstile** | Bot protection on the booking form | Free, unlimited. Optional — the honeypot in the form handles most abuse. Enable if we see problems. |
 | **Domain registrar** | e.g. `groomies.co.uk` | £8/year `.co.uk`, ~$10/year `.com`. Cheapest via Cloudflare Registrar (no markup). Register in the owner's name. |
+| **UK address lookup** — see below | Postcode → address autocomplete on the booking form | ~£5/mo (getaddress.io) or ~2p per lookup (Ideal Postcodes). **Requires a paid account — there is no free option.** |
+
+### UK address lookup (postcode → address)
+
+Wanted so customers can type a postcode and pick their address instead of typing
+it free-hand — fewer wrong addresses, and it gives us a clean postcode for the
+geo-fencing rule (only accept bookings in the postcode areas the van is covering
+that day).
+
+There is **no free source of house-level UK addresses** — the data is Royal Mail
+PAF and every provider licenses it. Options:
+
+| Provider | Model | Notes |
+|---|---|---|
+| **getaddress.io** | ~£5/month | UK-only, simplest API, generous free trial. Best starting point. |
+| **Ideal Postcodes** | ~2p per lookup | Pay-as-you-go, no monthly commitment. Better if volume is low. |
+| **Loqate** | Enterprise pricing | Overkill at this size. |
+| **Google Places** | Pay-per-use, needs a billing account | Works, but more setup and less UK-address-specific. |
+
+Free alternative if the budget isn't there: **postcodes.io** validates a postcode
+and returns its district/area for free. That's enough for the geo-fencing rule
+(is this booking in LU?) but it can NOT return a list of addresses — the customer
+still types their street and house number by hand.
+
+Whichever is chosen, it needs an API key adding as `ADDRESS_LOOKUP_API_KEY`.
 
 ### Sending domain (Resend)
 
@@ -68,6 +93,12 @@ For each of the below, they live in **two** places once we're in production:
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe → API keys | Public |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile widget | Public |
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile widget | **Secret** — server only |
+| `ADDRESS_LOOKUP_API_KEY` | Chosen address provider (see §2) | **Secret** — server only, when address lookup is added |
+
+⚠️ **`NEXT_PUBLIC_*` variables are baked in at BUILD time, not read at runtime.**
+Setting one in Cloudflare only takes effect on the next build — and if deploys
+are running from a local machine, it must be in `.env.local` too. Everything
+else is read at runtime and takes effect immediately.
 
 ---
 

@@ -32,6 +32,9 @@ type BookingDetails = {
   } | null;
   addons?: { name: string; price_cents: number }[] | null;
   total_cents?: number | null;
+  deposit_cents?: number | null;
+  deposit_mode?: "off" | "deposit" | "full" | null;
+  payments_enabled?: boolean | null;
   location: {
     name: string;
     type: string;
@@ -170,6 +173,24 @@ export default async function ManagePage({
                   </span>
                 </div>
               ) : null}
+
+              {b.deposit_mode && b.deposit_mode !== "off" && b.deposit_cents ? (
+                <div className="mt-1 flex items-baseline justify-between gap-4 text-sm">
+                  <span className="text-stone-600">
+                    {b.deposit_mode === "full" ? "Payable up front" : "Deposit"}
+                  </span>
+                  <span className="tabular-nums text-stone-800">
+                    £{(b.deposit_cents / 100).toFixed(2)}
+                  </span>
+                </div>
+              ) : null}
+              {b.deposit_mode && b.deposit_mode !== "off" && b.deposit_cents
+                ? !b.payments_enabled && (
+                    <p className="mt-2 text-xs text-stone-500">
+                      Payable on the day — nothing was charged when you booked.
+                    </p>
+                  )
+                : null}
             </Row>
           ) : null}
           <Row label="Contact">

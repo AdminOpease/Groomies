@@ -52,6 +52,7 @@ export async function updateBusinessSettings(
     ),
     payments_enabled: formData.get("payments_enabled") === "on",
     deposit_mode,
+    deposit_percent: clampInt(formData.get("deposit_percent"), 0, 100, 30),
     retention_months: clampInt(formData.get("retention_months"), 1, 60, 12),
     refund_cutoff_hours: clampInt(
       formData.get("refund_cutoff_hours"),

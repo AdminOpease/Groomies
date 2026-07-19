@@ -17,7 +17,7 @@ async function loadSlot(slotId: string) {
   const supabase = getSupabasePublic();
 
   // Slot + parent date + parent location + remaining, all in one round-trip.
-  const [slotRes, availRes, servicesRes] = await Promise.all([
+  const [slotRes, availRes, servicesRes, settingsRes] = await Promise.all([
     supabase
       .from("time_slots")
       .select(
@@ -47,6 +47,10 @@ async function loadSlot(slotId: string) {
       )
       .eq("is_active", true)
       .order("sort_order"),
+    supabase
+      .from("public_business_settings")
+      .select("deposit_mode, deposit_percent, payments_enabled")
+      .maybeSingle(),
   ]);
 
   if (slotRes.error || !slotRes.data) return null;
@@ -102,6 +106,14 @@ async function loadSlot(slotId: string) {
     location: rawLocation,
     remaining: availRes.data?.remaining ?? 0,
     services: servicesRes.data ?? [],
+    deposit: {
+      mode: (settingsRes.data?.deposit_mode ?? "off") as
+        | "off"
+        | "deposit"
+        | "full",
+      percent: settingsRes.data?.deposit_percent ?? 0,
+      paymentsEnabled: settingsRes.data?.payments_enabled ?? false,
+    },
   };
 }
 
@@ -191,6 +203,9 @@ export default async function BookPage({
                   ? data.location.address ?? data.location.name
                   : null
               }
+              depositMode={data.deposit.mode}
+              depositPercent={data.deposit.percent}
+              paymentsEnabled={data.deposit.paymentsEnabled}
             />
           </div>
         </FadeIn>

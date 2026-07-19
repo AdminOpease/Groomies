@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { submitBooking, type BookingResult } from "../actions";
+import { DOG_BREEDS } from "@/lib/dog-breeds";
 
 type Variant = {
   id: string;
@@ -41,11 +42,17 @@ export function BookingForm({
   services,
   requiresAddress,
   areaHint,
+  depositMode = "off",
+  depositPercent = 0,
+  paymentsEnabled = false,
 }: {
   slotId: string;
   services: Service[];
   requiresAddress: boolean;
   areaHint: string | null;
+  depositMode?: "off" | "deposit" | "full";
+  depositPercent?: number;
+  paymentsEnabled?: boolean;
 }) {
   const bound = submitBooking.bind(null, slotId);
   const [state, formAction, pending] = useActionState<
@@ -78,6 +85,11 @@ export function BookingForm({
   // never ask for here) and isn't the main service already being booked.
   const [addonIds, setAddonIds] = useState<string[]>(
     v?.addon_service_ids ?? []
+  );
+
+  // Stays open on an error re-render if they'd already entered a second breed.
+  const [isCross, setIsCross] = useState<boolean>(
+    Boolean(v?.pet_breed_secondary)
   );
   const addonOptions = services.filter(
     (s) => sizesOf(s).length === 0 && s.id !== serviceId
@@ -256,9 +268,35 @@ export function BookingForm({
                   </dd>
                 </div>
               </dl>
+              {/* Deposit owed. Shown as soon as the owner sets a policy; the
+                  wording only promises a payment step once payments are on. */}
+              {depositMode !== "off" && total > 0 ? (
+                <div className="mt-2 flex justify-between gap-4 text-sm">
+                  <span className="text-stone-600">
+                    {depositMode === "full"
+                      ? "Payable up front"
+                      : `Deposit (${depositPercent}%)`}
+                  </span>
+                  <span className="font-medium tabular-nums text-stone-900">
+                    {money(
+                      depositMode === "full"
+                        ? total
+                        : Math.round((total * depositPercent) / 100)
+                    )}
+                  </span>
+                </div>
+              ) : null}
+
               {anyFrom ? (
                 <p className="mt-2 text-xs text-stone-500">
                   Starting price — we'll confirm the final cost before starting.
+                </p>
+              ) : null}
+              {depositMode !== "off" && total > 0 ? (
+                <p className="mt-2 text-xs text-stone-500">
+                  {paymentsEnabled
+                    ? "You'll be asked to pay this to secure the appointment."
+                    : "Payable on the day — nothing is charged when you book."}
                 </p>
               ) : null}
             </div>
@@ -294,16 +332,68 @@ export function BookingForm({
             </select>
           </Field>
         </div>
-        <Field label="Breed" htmlFor="pet_breed" hint="Optional — helps us plan the right blades and shampoo.">
+        <Field
+          label="Breed"
+          htmlFor="pet_breed"
+          hint="Optional — helps us plan the right blades and shampoo. Start typing to search, or type your own."
+        >
           <input
             id="pet_breed"
             name="pet_breed"
             type="text"
+            list="dog-breeds"
             autoComplete="off"
+            placeholder="e.g. Cockapoo"
             defaultValue={v?.pet_breed ?? ""}
             className={inputClass}
           />
         </Field>
+
+        {/* Crosses are extremely common for groomers, and the second breed is
+            what actually tells us the coat — so it gets its own field rather
+            than being buried in free text. */}
+        {isCross ? (
+          <Field
+            label="Second breed"
+            htmlFor="pet_breed_secondary"
+            hint="The other half of the cross."
+          >
+            <div className="flex gap-2">
+              <input
+                id="pet_breed_secondary"
+                name="pet_breed_secondary"
+                type="text"
+                list="dog-breeds"
+                autoComplete="off"
+                placeholder="e.g. Poodle"
+                defaultValue={v?.pet_breed_secondary ?? ""}
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={() => setIsCross(false)}
+                className="shrink-0 rounded-lg border border-stone-300 px-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </Field>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsCross(true)}
+            className="text-sm text-emerald-800 hover:text-emerald-900 underline underline-offset-4"
+          >
+            + It's a cross of two breeds
+          </button>
+        )}
+
+        {/* One shared option list for both breed inputs. */}
+        <datalist id="dog-breeds">
+          {DOG_BREEDS.map((b) => (
+            <option key={b} value={b} />
+          ))}
+        </datalist>
       </Section>
 
       {/* Customer */}
