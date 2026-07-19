@@ -28,13 +28,18 @@ Being built in Ozan's own accounts (GitHub, Supabase, Cloudflare) as a solo proj
 | 8 | Legal pages + GDPR erasure + usage widget + backups doc | ✅ | `612a9f9` |
 | — | Search + slot-count toggle | ✅ | `f3cbe46` |
 | — | Design pass 1 (olive palette, Fraunces serif, hero photos, sections) | ✅ | `3b57471` |
+| — | Logo/header polish + "from" pricing flag | ✅ | `558012b` |
+| — | Size-tiered pricing (real price list + book-by-size) | ✅ | `a5616dd` |
 
 **Everything works. Real bookings could be taken today. Design pass is ongoing.**
 
 Live URL: `https://groomies.billowing-firefly-f15a.workers.dev` (Cloudflare Workers).  
 GitHub: https://github.com/AdminOpease/Groomies  
 Supabase project ref: `afbdldaqcibfcmocshvu`  
-Local path: `/Users/ozanulasan/groomies/`  
+Local path: `/Users/ozanulasan/Projects/groomies/`  
+
+⚠️ **Pushing to `main` does not deploy.** Deploys are manual (`pnpm deploy`).
+See the gotcha in §8 — this has already caused the live site to lag `main`.
 
 ---
 
@@ -43,15 +48,54 @@ Local path: `/Users/ozanulasan/groomies/`
 **Design polish — mid-flight.** Owner said the site was "too plain, more for old people". We pivoted to editorial-minimalist:
 
 - Full split hero (bold display type left, single big cinematic photo right)
-- Killed laurels, killed ornate circular seal, killed Luxury Spa Upgrades tile, killed VIP Club section
+- Killed laurels, killed ornate circular seal
 - Fraunces serif for display type, cream body background, olive brand
 - Local hero photo at `/Image Groomies.png` (owner's file, dropped into `public/`)
 - Real logo at `/Groomies Logo.png` (transparent PNG) rendered by header/footer via `business_settings.logo_url`
 
-**Last thing being iterated:** logo sizing/positioning in the header.
-- Header uses `flex items-center py-3` (no fixed height) — flexes to fit
-- Logo is `h-14 sm:h-20 w-auto` (56/80px)
-- If the owner comes back saying "too big" or "too small", tweak the `h-*` classes on `<img>` in `app/(public)/_components/Header.tsx:30` and `Footer.tsx:24`
+**Reversal to know about:** Luxury Spa Upgrades and VIP Club were cut in design
+pass 1 as "too old-people", then explicitly asked back in when the real printed
+price list arrived. Both now live on `/services`. Don't "helpfully" remove them
+again on the strength of the older note.
+
+**Logo — settled (don't re-litigate without being asked).** The source PNG had
+huge *uneven* transparent padding: artwork was only 33% of the image height and
+sat off-centre (bottom pad 415px vs top 267px). That's why it looked small and
+crooked, and why enlarging it grew the whole header. Fixed by trimming the PNG
+to its artwork and re-padding evenly (31px all round), committed over the same
+path so no DB change was needed.
+- Header: fixed `h-16` bar, logo `h-10 sm:h-12` — `_components/Header.tsx`
+- Footer: logo `h-12 sm:h-14` — `_components/Footer.tsx`
+- Hero: logo `h-20 sm:h-24` above the eyebrow — `app/(public)/page.tsx`
+- The original untrimmed PNG is recoverable via `git show 558012b^:"public/Groomies Logo.png"`
+
+**Pricing model — read this before touching services or booking.**
+
+Grooming is priced by dog size, so one `services.price_cents` was never enough.
+
+- `service_variants` = size tiers (`label`, `price_cents`, `price_from`, `sort_order`).
+  A service with **no** active variants keeps its flat `services.price_cents`
+  (all the add-ons, Puppy Introduction). A service **with** variants is priced
+  per size and its own `price_cents` is only a fallback.
+- `services.category` = free-form price-list section heading. `/services` groups
+  by it, ordering sections by the lowest `sort_order` in each. Uncategorised
+  services fall into a trailing "More services" group rather than vanishing.
+  Sections are therefore owner-editable — **do not hardcode section names.**
+- `price_from` (on both services and variants) renders "From £45" instead of "£45".
+  Per the printed list: Full Groom is "From" on every size; Bath & Freshen Up is exact.
+- `bookings.service_variant_id` + `bookings.price_cents` — the price is
+  **snapshotted at booking time**, so changing a price later never rewrites what
+  a past customer was quoted. Read the booking's own `price_cents`, never the
+  service's current price.
+- `book_slot` requires a size when the service has tiers (`VARIANT_REQUIRED`,
+  P0007) and rejects a size belonging to a different service (`VARIANT_INVALID`,
+  P0008) — so a Large groom can't be booked at the Small price. Resolved *before*
+  the capacity check so a bad size never consumes a slot.
+- Owner manages tiers at `/admin/services/[id]` (Size tiers panel) and the
+  section heading via the "Price-list section" field.
+
+Source of truth for the numbers is the owner's printed price list (Full Groom
+£45/£55/£70/£85 from; Bath & Freshen £30/£40/£50/£60 exact).
 
 **Not yet done (nice-to-haves, not blockers):**
 - Supabase Storage bucket + admin upload UI for logo/photos (owner uploaded logo + hero via `public/` for now; Storage is planned so they can swap via /admin)
@@ -146,6 +190,11 @@ All applied to remote Supabase (some via CLI, some pasted directly into Studio w
 20260708100100_completed_no_show_status.sql
 20260708200000_phase8_hardening.sql
 20260708220000_slot_count_visibility.sql
+20260710120000_service_price_from.sql        # "From £X" display flag
+20260710170000_service_size_tiers.sql        # service_variants, category,
+                                             # booking price snapshot,
+                                             # tier-aware book_slot (+ old-
+                                             # signature compat shim)
 ```
 
 ---
@@ -189,6 +238,13 @@ pnpm test:security            # RLS + booking-race + hold-expiry + manage-token 
 
 # Supabase migrations
 pnpm exec supabase db push --linked --yes   # HANGS SOMETIMES — see gotcha below
+# When it hangs, paste the migration into the Studio SQL editor instead.
+# Handy: pbcopy < supabase/migrations/<file>.sql   → then ⌘V into Studio
+
+# Deploy (pushing to main does NOT deploy — see §8)
+pnpm exec wrangler login      # once per machine
+pnpm deploy                   # build + deploy to Cloudflare
+pnpm preview                  # build the CF bundle and serve locally first
 ```
 
 ---
@@ -207,6 +263,50 @@ Migrations 012 and 013 in this repo have both been applied through Studio at som
 ### Filenames with spaces in `public/`
 Files like `Image Groomies.png` and `Groomies Logo.png` work but are fragile. Next.js handles URL encoding when you reference them in JSX (`src="/Image Groomies.png"`). Fine locally; may cause issues on some CDN configurations. If we hit any weirdness, rename to kebab-case.
 
+### ⚠️ Pushing to `main` does NOT deploy — Cloudflare is not connected to GitHub
+
+**This is the one most likely to waste your time and mislead the owner.**
+
+The Worker was created with `wrangler deploy`, not through Cloudflare's Git
+integration. There is no build pipeline watching the repo. So:
+
+- `git push origin main` uploads code to GitHub and **changes nothing on the live site**
+- The Deployments tab in the dashboard has **no "Create deployment" button** —
+  that button only exists when Workers Builds/Git is configured. Its absence is
+  the tell.
+- The live site can silently lag `main` indefinitely. This actually happened:
+  the size-tier work sat pushed-but-undeployed until someone checked the live URL.
+
+**To actually deploy:**
+```bash
+pnpm exec wrangler login   # once per machine; opens a browser
+pnpm deploy                # opennextjs-cloudflare build && deploy
+```
+
+**Always verify after deploying** — don't trust "it built":
+```bash
+curl -s https://groomies.billowing-firefly-f15a.workers.dev/services | grep -c "Full Groom Packages"
+```
+
+Note `/services` and `/` use `revalidate = 3600` (ISR), so a stale page can
+persist briefly even after a good deploy.
+
+**Worth fixing:** connect the repo (Workers & Pages → groomies → Settings →
+Build → Connect to Git) so pushes deploy themselves. Until then, treat
+"pushed" and "deployed" as two separate steps.
+
+### Migrations that change an RPC signature need a compatibility shim
+
+The live Worker keeps calling the OLD function signature until a new build is
+deployed. Dropping/replacing a signature in the same migration breaks live
+bookings for that whole window.
+
+Pattern used for `book_slot` when adding `p_service_variant_id`: create the new
+signature, and keep the old one as a thin wrapper forwarding to it with the new
+arg null. PostgREST resolves overloads by the argument names in the request
+body, so both coexist. Drop the old one only after the new build is confirmed
+live. See `20260710170000_service_size_tiers.sql`.
+
 ### Cloudflare deploy: `proxy.ts` vs `middleware.ts`
 Next.js 16 introduced `proxy.ts` as a middleware replacement, but proxy is **Node.js-only by design**. Cloudflare Workers only support Edge runtime. We use the deprecated-but-Edge `middleware.ts`. Do NOT rename to proxy.ts — CF build fails.
 
@@ -223,7 +323,17 @@ Not every Unsplash photo ID is stable. When picking a placeholder, verify with `
 `useActionState` resets form fields on submit by default. On error paths we echo the submitted values back in the state so the form doesn't blank out. Pattern is on the booking form (`app/(public)/book/[slotId]/actions.ts`) — copy that pattern for any new user-facing form.
 
 ### Preview server (harness detail)
-This project lives at `/Users/ozanulasan/groomies/` but the Claude harness's `preview_start` MCP is scoped to a different directory (`opease-frontend`). Do NOT use `preview_start` — it'll try to boot the wrong project. Use `pnpm dev` in a background Bash task and `curl` / `open http://localhost:3000` to verify. Same pattern used throughout this session.
+This project lives at `/Users/ozanulasan/Projects/groomies/` but the Claude harness's `preview_start` MCP has been scoped to a different directory (`opease-frontend`). Do NOT use `preview_start` — it'll try to boot the wrong project. Use `pnpm dev` in a background Bash task and `curl` / `open http://localhost:3000` to verify.
+
+For screenshots without the preview MCP, headless Chrome works well:
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless=new --disable-gpu --hide-scrollbars \
+  --window-size=1280,2000 --screenshot=/tmp/shot.png http://localhost:3000/
+```
+It occasionally hangs — `pkill -f "Google Chrome"` and retry. For content checks
+(is a section/price on the page?), curl + a regex over the HTML is faster and
+more reliable than a screenshot.
 
 The user has a memory note about this too:
 > "Keep separate projects separate — don't touch opease while working on another project, even if harness prompts (e.g. preview server) suggest it"
@@ -245,7 +355,7 @@ Fluid, but the direction so far:
 
 ```bash
 # From project root
-cd /Users/ozanulasan/groomies
+cd /Users/ozanulasan/Projects/groomies
 
 # Start (backgrounded)
 pnpm dev &
@@ -279,11 +389,16 @@ If picking up in a fresh session, those load automatically.
 
 Likely in this order — but wait for user input, don't just push:
 
-1. **Finish the header/logo iteration** — user was mid-fine-tuning size and position when we pushed
-2. **Set business_settings.contact_email** (via /admin/settings) so owner alerts have somewhere to land
-3. **Add RESEND_API_KEY** to `.env.local` and Cloudflare env — start actually sending emails
-4. **Supabase Storage bucket + upload UI** — so owner can manage logo/photos from the admin (not `public/`)
-5. **Real photos throughout** — currently just hero. Studio-moment, testimonials, and areas would benefit
-6. **Continue design polish** — user was cycling through opinions; small increments, not big passes
+1. **Connect Cloudflare to GitHub** so pushes deploy themselves — see the §8
+   gotcha. Highest value: it removes a whole class of "I thought it was live" bugs.
+2. **Drop the `book_slot` compat shim** — the tier-aware build is deployed, so the
+   old 11-arg signature is now dead code:
+   `drop function if exists public.book_slot(uuid, uuid, text, text, text, text, text, text, text, text, boolean);`
+   Harmless to leave; just tidy.
+3. **Set business_settings.contact_email** (via /admin/settings) so owner alerts have somewhere to land
+4. **Add RESEND_API_KEY** to `.env.local` and Cloudflare env — start actually sending emails
+5. **Supabase Storage bucket + upload UI** — so owner can manage logo/photos from the admin (not `public/`)
+6. **Real photos throughout** — currently just hero. Studio-moment, testimonials, and areas would benefit
+7. **Continue design polish** — user was cycling through opinions; small increments, not big passes
 
 Anything larger (Stripe wire-up, Turnstile, Sentry, WCAG audit, real launch prep) should be a fresh explicit conversation.
