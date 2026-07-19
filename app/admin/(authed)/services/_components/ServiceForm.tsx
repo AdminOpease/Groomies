@@ -12,6 +12,7 @@ type Service = {
   deposit_amount_cents: number | null;
   is_active: boolean;
   price_from: boolean;
+  category: string | null;
   sort_order: number;
 };
 
@@ -113,6 +114,20 @@ export function ServiceForm({
           </span>
         </span>
       </label>
+
+      <Field
+        label="Price-list section"
+        htmlFor="category"
+        hint='Heading this appears under on the Services page, e.g. "Full Groom Packages" or "Spa & Add-On Services". Services sharing a section are grouped together.'
+      >
+        <input
+          id="category"
+          name="category"
+          type="text"
+          defaultValue={service?.category ?? ""}
+          className={input}
+        />
+      </Field>
 
       <Field
         label="Sort order"

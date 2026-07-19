@@ -1,14 +1,40 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitBooking, type BookingResult } from "../actions";
+
+type Variant = {
+  id: string;
+  label: string;
+  price_cents: number;
+  price_from: boolean;
+  sort_order: number;
+};
 
 type Service = {
   id: string;
   name: string;
   price_cents: number;
+  price_from: boolean;
   duration_minutes: number;
+  service_variants: Variant[] | null;
 };
+
+const money = (cents: number) =>
+  `£${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+
+const sizesOf = (s: Service | undefined): Variant[] =>
+  [...(s?.service_variants ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+
+/** What to show next to a service name in the dropdown. */
+function servicePriceLabel(s: Service): string {
+  const sizes = sizesOf(s);
+  if (sizes.length === 0) {
+    return `${s.price_from ? "from " : ""}${money(s.price_cents)}`;
+  }
+  const lowest = Math.min(...sizes.map((v) => v.price_cents));
+  return `from ${money(lowest)}`;
+}
 
 export function BookingForm({
   slotId,
@@ -30,6 +56,13 @@ export function BookingForm({
   // Preserve user-typed values across error re-renders. Empty on the initial
   // render and after successful submissions (which redirect anyway).
   const v = state && !state.ok ? state.values : undefined;
+
+  // Which service is picked drives whether we ask for a dog size. Controlled
+  // so the size selector can react; survives error re-renders because the
+  // component never unmounts.
+  const [serviceId, setServiceId] = useState<string>(v?.service_id ?? "");
+  const selected = services.find((s) => s.id === serviceId);
+  const sizes = sizesOf(selected);
 
   return (
     <form action={formAction} className="space-y-8">
@@ -61,19 +94,54 @@ export function BookingForm({
           <select
             id="service_id"
             name="service_id"
-            defaultValue={v?.service_id ?? ""}
+            value={serviceId}
+            onChange={(e) => setServiceId(e.target.value)}
             className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           >
             <option value="">Not sure yet — decide on arrival</option>
             {services.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} — £{(s.price_cents / 100).toFixed(2)}
+                {s.name} — {servicePriceLabel(s)}
               </option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-stone-500">
-            You can leave this unset — we'll confirm with you when we arrive.
-          </p>
+
+          {/* Size tiers: only for services priced by dog size. Keyed on the
+              service so switching packages clears a stale size. */}
+          {sizes.length > 0 ? (
+            <div className="mt-4" key={serviceId}>
+              <label
+                htmlFor="service_variant_id"
+                className="block text-sm font-medium text-stone-700 mb-1"
+              >
+                Your dog's size<span className="text-emerald-700"> *</span>
+              </label>
+              <select
+                id="service_variant_id"
+                name="service_variant_id"
+                required
+                defaultValue={v?.service_variant_id ?? ""}
+                className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              >
+                <option value="">Choose a size…</option>
+                {sizes.map((size) => (
+                  <option key={size.id} value={size.id}>
+                    {size.label} — {size.price_from ? "from " : ""}
+                    {money(size.price_cents)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-stone-500">
+                {sizes.some((s) => s.price_from)
+                  ? "Starting price for that size — the final price depends on coat condition, temperament, breed and time required. We'll always confirm before starting."
+                  : "Prices are per groom for that size."}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-stone-500">
+              You can leave this unset — we'll confirm with you when we arrive.
+            </p>
+          )}
         </Section>
       ) : null}
 

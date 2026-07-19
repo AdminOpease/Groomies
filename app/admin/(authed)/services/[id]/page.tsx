@@ -4,6 +4,10 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { updateService } from "../actions";
 import { ServiceForm } from "../_components/ServiceForm";
 import { DeleteServiceButton } from "./_components/DeleteServiceButton";
+import {
+  ServiceVariants,
+  type Variant,
+} from "./_components/ServiceVariants";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +25,7 @@ export default async function EditServicePage({
   const { data: service, error } = await supabase
     .from("services")
     .select(
-      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, price_from, sort_order"
+      "id, name, description, duration_minutes, price_cents, deposit_amount_cents, is_active, price_from, category, sort_order, service_variants(id, label, price_cents, price_from, sort_order)"
     )
     .eq("id", id)
     .single();
@@ -55,6 +59,13 @@ export default async function EditServicePage({
       ) : null}
 
       <ServiceForm service={service} action={bound} submitLabel="Save changes" />
+
+      <ServiceVariants
+        serviceId={id}
+        variants={[...((service.service_variants ?? []) as Variant[])].sort(
+          (a, b) => a.sort_order - b.sort_order
+        )}
+      />
 
       <DeleteServiceButton id={id} serviceName={service.name} />
     </div>

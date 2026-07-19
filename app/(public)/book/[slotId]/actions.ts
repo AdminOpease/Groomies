@@ -9,6 +9,7 @@ import {
 
 export type BookingValues = {
   service_id: string | null;
+  service_variant_id: string | null;
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
@@ -77,6 +78,19 @@ function friendlyError(rpcMessage: string): { message: string; code: string } {
       message: "This slot no longer exists.",
     };
   }
+  if (rpcMessage.includes("VARIANT_REQUIRED")) {
+    return {
+      code: "VARIANT_REQUIRED",
+      message: "Please choose your dog's size for that service.",
+    };
+  }
+  if (rpcMessage.includes("VARIANT_INVALID")) {
+    return {
+      code: "VARIANT_INVALID",
+      message:
+        "That size isn't available for the service you picked. Please choose again.",
+    };
+  }
   return {
     code: "OTHER",
     message: "Something went wrong. Please try again.",
@@ -101,6 +115,7 @@ export async function submitBooking(
   // React 19's default form reset doesn't blank the fields.
   const values: BookingValues = {
     service_id: nullIfBlank(formData.get("service_id")),
+    service_variant_id: nullIfBlank(formData.get("service_variant_id")),
     customer_name: nullIfBlank(formData.get("customer_name")),
     customer_email: nullIfBlank(formData.get("customer_email")),
     customer_phone: nullIfBlank(formData.get("customer_phone")),
@@ -117,6 +132,9 @@ export async function submitBooking(
     payload = {
       p_time_slot_id: slotId,
       p_service_id: values.service_id,
+      // A size without a service is incoherent, and the RPC rejects it — so
+      // drop it if the customer cleared the service.
+      p_service_variant_id: values.service_id ? values.service_variant_id : null,
       p_customer_name: required(values.customer_name, "Your name"),
       p_customer_email: required(values.customer_email, "Email"),
       p_customer_phone: required(values.customer_phone, "Phone"),

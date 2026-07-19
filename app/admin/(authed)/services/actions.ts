@@ -56,6 +56,10 @@ function parse(formData: FormData) {
     ),
     is_active: formData.get("is_active") === "on",
     price_from: formData.get("price_from") === "on",
+    category:
+      typeof formData.get("category") === "string"
+        ? (formData.get("category") as string).trim() || null
+        : null,
     sort_order: optionalInt(formData.get("sort_order")),
   };
 }
@@ -106,6 +110,97 @@ export async function updateService(
   revalidatePath("/services");
   revalidatePath("/");
   return { ok: true, message: "Saved." };
+}
+
+// ---------------------------------------------------------------------------
+// Size tiers (service_variants)
+// ---------------------------------------------------------------------------
+//
+// A service with tiers is priced per size and its own price_cents becomes a
+// fallback only. Deleting every tier returns the service to flat pricing.
+
+export type VariantState = { ok: boolean; message?: string };
+
+function revalidateServicePaths(serviceId: string) {
+  revalidatePath("/admin/services");
+  revalidatePath(`/admin/services/${serviceId}`);
+  revalidatePath("/services");
+  revalidatePath("/");
+}
+
+function parseVariant(formData: FormData) {
+  return {
+    label: requireString(formData.get("label"), "Size label"),
+    price_cents: requirePositiveInt(formData.get("price_pence"), "Price"),
+    price_from: formData.get("price_from") === "on",
+    sort_order: optionalInt(formData.get("sort_order")),
+  };
+}
+
+export async function createVariant(
+  serviceId: string,
+  _prev: VariantState,
+  formData: FormData
+): Promise<VariantState> {
+  const supabase = await getSupabaseServer();
+  let payload;
+  try {
+    payload = parseVariant(formData);
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+
+  const { error } = await supabase
+    .from("service_variants")
+    .insert({ ...payload, service_id: serviceId });
+  if (error) return { ok: false, message: error.message };
+
+  revalidateServicePaths(serviceId);
+  return { ok: true, message: `Added ${payload.label}.` };
+}
+
+export async function updateVariant(
+  variantId: string,
+  serviceId: string,
+  _prev: VariantState,
+  formData: FormData
+): Promise<VariantState> {
+  const supabase = await getSupabaseServer();
+  let payload;
+  try {
+    payload = parseVariant(formData);
+  } catch (e) {
+    return { ok: false, message: (e as Error).message };
+  }
+
+  const { error } = await supabase
+    .from("service_variants")
+    .update(payload)
+    .eq("id", variantId);
+  if (error) return { ok: false, message: error.message };
+
+  revalidateServicePaths(serviceId);
+  return { ok: true, message: "Saved." };
+}
+
+export async function deleteVariant(
+  variantId: string,
+  serviceId: string,
+  _prev: VariantState,
+  _formData: FormData
+): Promise<VariantState> {
+  const supabase = await getSupabaseServer();
+
+  // Bookings reference variants with ON DELETE SET NULL, and each booking
+  // keeps its own price snapshot — so removing a size never rewrites history.
+  const { error } = await supabase
+    .from("service_variants")
+    .delete()
+    .eq("id", variantId);
+  if (error) return { ok: false, message: error.message };
+
+  revalidateServicePaths(serviceId);
+  return { ok: true, message: "Size removed." };
 }
 
 export async function deleteService(

@@ -42,7 +42,9 @@ async function loadSlot(slotId: string) {
       .maybeSingle(),
     supabase
       .from("services")
-      .select("id, name, price_cents, duration_minutes")
+      .select(
+        "id, name, price_cents, price_from, duration_minutes, service_variants(id, label, price_cents, price_from, sort_order)"
+      )
       .eq("is_active", true)
       .order("sort_order"),
   ]);
