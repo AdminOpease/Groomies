@@ -10,6 +10,7 @@ import {
 export type BookingValues = {
   service_id: string | null;
   service_variant_id: string | null;
+  addon_service_ids: string[];
   customer_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
@@ -91,6 +92,13 @@ function friendlyError(rpcMessage: string): { message: string; code: string } {
         "That size isn't available for the service you picked. Please choose again.",
     };
   }
+  if (rpcMessage.includes("ADDON_INVALID")) {
+    return {
+      code: "ADDON_INVALID",
+      message:
+        "One of the extras you picked isn't available any more. Please review your selection and try again.",
+    };
+  }
   return {
     code: "OTHER",
     message: "Something went wrong. Please try again.",
@@ -116,6 +124,9 @@ export async function submitBooking(
   const values: BookingValues = {
     service_id: nullIfBlank(formData.get("service_id")),
     service_variant_id: nullIfBlank(formData.get("service_variant_id")),
+    addon_service_ids: formData
+      .getAll("addon_service_ids")
+      .filter((x): x is string => typeof x === "string" && x.trim().length > 0),
     customer_name: nullIfBlank(formData.get("customer_name")),
     customer_email: nullIfBlank(formData.get("customer_email")),
     customer_phone: nullIfBlank(formData.get("customer_phone")),
@@ -135,6 +146,11 @@ export async function submitBooking(
       // A size without a service is incoherent, and the RPC rejects it — so
       // drop it if the customer cleared the service.
       p_service_variant_id: values.service_id ? values.service_variant_id : null,
+      // The RPC rejects the main service repeated as an extra, so filter it
+      // out rather than letting a stale checkbox fail the whole booking.
+      p_addon_service_ids: values.addon_service_ids.filter(
+        (id) => id !== values.service_id
+      ),
       p_customer_name: required(values.customer_name, "Your name"),
       p_customer_email: required(values.customer_email, "Email"),
       p_customer_phone: required(values.customer_phone, "Phone"),

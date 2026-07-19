@@ -61,8 +61,47 @@ export function BookingForm({
   // so the size selector can react; survives error re-renders because the
   // component never unmounts.
   const [serviceId, setServiceId] = useState<string>(v?.service_id ?? "");
+  const [variantId, setVariantId] = useState<string>(
+    v?.service_variant_id ?? ""
+  );
   const selected = services.find((s) => s.id === serviceId);
   const sizes = sizesOf(selected);
+
+  // Switching package invalidates any size already chosen for the old one.
+  const pickService = (id: string) => {
+    setServiceId(id);
+    setVariantId("");
+    setAddonIds((prev) => prev.filter((x) => x !== id));
+  };
+
+  // Extras: any service that isn't size-priced (a tiered price needs a size we
+  // never ask for here) and isn't the main service already being booked.
+  const [addonIds, setAddonIds] = useState<string[]>(
+    v?.addon_service_ids ?? []
+  );
+  const addonOptions = services.filter(
+    (s) => sizesOf(s).length === 0 && s.id !== serviceId
+  );
+  const chosenAddons = addonOptions.filter((s) => addonIds.includes(s.id));
+
+  const toggleAddon = (id: string) =>
+    setAddonIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  // Running total. For a tiered package the main line only counts once a size
+  // is picked, so we don't quote a number we can't stand behind.
+  const mainPrice =
+    selected == null
+      ? null
+      : sizes.length > 0
+        ? (sizes.find((z) => z.id === variantId)?.price_cents ?? null)
+        : selected.price_cents;
+  const addonsTotal = chosenAddons.reduce((n, s) => n + s.price_cents, 0);
+  const total = (mainPrice ?? 0) + addonsTotal;
+  const anyFrom =
+    (selected?.price_from ?? false) ||
+    sizes.some((z) => z.id === variantId && z.price_from);
 
   return (
     <form action={formAction} className="space-y-8">
@@ -95,7 +134,7 @@ export function BookingForm({
             id="service_id"
             name="service_id"
             value={serviceId}
-            onChange={(e) => setServiceId(e.target.value)}
+            onChange={(e) => pickService(e.target.value)}
             className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           >
             <option value="">Not sure yet — decide on arrival</option>
@@ -109,7 +148,7 @@ export function BookingForm({
           {/* Size tiers: only for services priced by dog size. Keyed on the
               service so switching packages clears a stale size. */}
           {sizes.length > 0 ? (
-            <div className="mt-4" key={serviceId}>
+            <div className="mt-4">
               <label
                 htmlFor="service_variant_id"
                 className="block text-sm font-medium text-stone-700 mb-1"
@@ -120,7 +159,8 @@ export function BookingForm({
                 id="service_variant_id"
                 name="service_variant_id"
                 required
-                defaultValue={v?.service_variant_id ?? ""}
+                value={variantId}
+                onChange={(e) => setVariantId(e.target.value)}
                 className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
                 <option value="">Choose a size…</option>
@@ -142,6 +182,87 @@ export function BookingForm({
               You can leave this unset — we'll confirm with you when we arrive.
             </p>
           )}
+        </Section>
+      ) : null}
+
+      {/* Add-ons */}
+      {addonOptions.length > 0 ? (
+        <Section title="Add extras">
+          <p className="text-sm text-stone-600">
+            Optional — tick anything you'd like added to this visit.
+          </p>
+          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+            {addonOptions.map((s) => {
+              const checked = addonIds.includes(s.id);
+              return (
+                <li key={s.id}>
+                  <label className="flex items-start gap-3 py-2 select-none cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="addon_service_ids"
+                      value={s.id}
+                      checked={checked}
+                      onChange={() => toggleAddon(s.id)}
+                      className="mt-1 h-4 w-4 shrink-0 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span className="flex-1 flex items-baseline justify-between gap-3">
+                      <span className="text-sm text-stone-800">{s.name}</span>
+                      <span className="text-sm font-medium text-emerald-800 tabular-nums whitespace-nowrap">
+                        {s.price_from ? "from " : ""}
+                        {money(s.price_cents)}
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Running total. Deliberately omitted until every chosen line has a
+              known price, so we never show a number we can't stand behind. */}
+          {mainPrice !== null || chosenAddons.length > 0 ? (
+            <div className="mt-5 rounded-xl border border-emerald-900/15 bg-emerald-50/60 px-4 py-3">
+              <dl className="space-y-1 text-sm">
+                {mainPrice !== null && selected ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-stone-600">
+                      {selected.name}
+                      {sizes.length > 0
+                        ? ` — ${sizes.find((z) => z.id === variantId)?.label}`
+                        : ""}
+                    </dt>
+                    <dd className="tabular-nums text-stone-800">
+                      {money(mainPrice)}
+                    </dd>
+                  </div>
+                ) : null}
+                {chosenAddons.map((s) => (
+                  <div key={s.id} className="flex justify-between gap-4">
+                    <dt className="text-stone-600">{s.name}</dt>
+                    <dd className="tabular-nums text-stone-800">
+                      {money(s.price_cents)}
+                    </dd>
+                  </div>
+                ))}
+                <div className="flex justify-between gap-4 border-t border-emerald-900/15 pt-2 mt-2">
+                  <dt className="font-medium text-stone-900">
+                    {selected && sizes.length > 0 && mainPrice === null
+                      ? "Extras total"
+                      : "Total"}
+                  </dt>
+                  <dd className="font-semibold tabular-nums text-emerald-800">
+                    {anyFrom ? "from " : ""}
+                    {money(total)}
+                  </dd>
+                </div>
+              </dl>
+              {anyFrom ? (
+                <p className="mt-2 text-xs text-stone-500">
+                  Starting price — we'll confirm the final cost before starting.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </Section>
       ) : null}
 

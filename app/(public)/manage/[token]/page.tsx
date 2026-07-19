@@ -27,8 +27,11 @@ type BookingDetails = {
   service?: {
     name: string;
     duration_minutes: number;
+    size?: string | null;
     price_cents: number;
   } | null;
+  addons?: { name: string; price_cents: number }[] | null;
+  total_cents?: number | null;
   location: {
     name: string;
     type: string;
@@ -124,13 +127,49 @@ export default async function ManagePage({
               </p>
             ) : null}
           </Row>
-          {b.service ? (
+          {b.service || (b.addons && b.addons.length > 0) ? (
             <Row label="Service">
-              <p className="font-medium text-stone-900">{b.service.name}</p>
-              <p className="text-stone-600 text-sm">
-                About {b.service.duration_minutes} min · £
-                {(b.service.price_cents / 100).toFixed(2)}
-              </p>
+              {b.service ? (
+                <>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="font-medium text-stone-900">
+                      {b.service.name}
+                      {b.service.size ? ` — ${b.service.size}` : ""}
+                    </p>
+                    <p className="tabular-nums text-stone-800">
+                      £{(b.service.price_cents / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="text-stone-600 text-sm">
+                    About {b.service.duration_minutes} min
+                  </p>
+                </>
+              ) : null}
+
+              {b.addons && b.addons.length > 0 ? (
+                <ul className="mt-3 space-y-1">
+                  {b.addons.map((a) => (
+                    <li
+                      key={a.name}
+                      className="flex items-baseline justify-between gap-4 text-sm"
+                    >
+                      <span className="text-stone-600">+ {a.name}</span>
+                      <span className="tabular-nums text-stone-800">
+                        £{(a.price_cents / 100).toFixed(2)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {b.total_cents != null ? (
+                <div className="mt-3 pt-2 border-t border-stone-200 flex items-baseline justify-between gap-4">
+                  <span className="font-medium text-stone-900">Total</span>
+                  <span className="font-semibold tabular-nums text-emerald-800">
+                    £{(b.total_cents / 100).toFixed(2)}
+                  </span>
+                </div>
+              ) : null}
             </Row>
           ) : null}
           <Row label="Contact">

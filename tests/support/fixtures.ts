@@ -89,6 +89,10 @@ export async function makeSlot(opts: {
 export function validBookingArgs(overrides: Record<string, unknown> = {}) {
   return {
     p_service_id: null,
+    // Both required by the current book_slot signature. PostgREST resolves the
+    // overload by argument names, so omitting them stops matching the function.
+    p_service_variant_id: null,
+    p_addon_service_ids: [],
     p_customer_name: "Test Customer",
     p_customer_email: `test-${Date.now()}@example.com`,
     p_customer_phone: "+447700000000",
