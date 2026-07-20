@@ -18,8 +18,12 @@ type Service = {
   price_cents: number;
   price_from: boolean;
   duration_minutes: number;
+  sort_order: number;
   service_variants: Variant[] | null;
 };
+
+/** Services at or above this sort_order are extras, not bookable grooms. */
+const ADDON_SORT_ORDER = 100;
 
 const money = (cents: number) =>
   `£${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
@@ -102,8 +106,16 @@ export function BookingForm({
   const [isCross, setIsCross] = useState<boolean>(
     Boolean(v?.pet_breed_secondary)
   );
+  // Groom packages vs extras. sort_order >= 100 marks an add-on — the existing
+  // convention in this codebase, and it matches the printed price list exactly
+  // (10–50 are the grooms, 110+ are Spa & Add-Ons).
+  //
+  // Keeping the two lists disjoint matters: before this, every spa extra also
+  // appeared as a bookable "service", and every groom appeared as an "extra".
+  const isAddon = (s: Service) => s.sort_order >= ADDON_SORT_ORDER;
+  const mainServices = services.filter((s) => !isAddon(s));
   const addonOptions = services.filter(
-    (s) => sizesOf(s).length === 0 && s.id !== serviceId
+    (s) => isAddon(s) && s.id !== serviceId
   );
   const chosenAddons = addonOptions.filter((s) => addonIds.includes(s.id));
 
@@ -150,18 +162,21 @@ export function BookingForm({
       </div>
 
       {/* Service */}
-      {services.length > 0 ? (
+      {mainServices.length > 0 ? (
         <Section title="Service">
           <label htmlFor="service_id" className="sr-only">Service</label>
           <select
             id="service_id"
             name="service_id"
+            required
             value={serviceId}
             onChange={(e) => pickService(e.target.value)}
             className="block w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           >
-            <option value="">Not sure yet — decide on arrival</option>
-            {services.map((s) => (
+            <option value="" disabled>
+              Choose a groom…
+            </option>
+            {mainServices.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} — {servicePriceLabel(s)}
               </option>
@@ -200,11 +215,7 @@ export function BookingForm({
                   : "Prices are per groom for that size."}
               </p>
             </div>
-          ) : (
-            <p className="mt-2 text-xs text-stone-500">
-              You can leave this unset — we'll confirm with you when we arrive.
-            </p>
-          )}
+          ) : null}
         </Section>
       ) : null}
 
@@ -317,32 +328,20 @@ export function BookingForm({
 
       {/* Pet */}
       <Section title="Your pet">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Pet name" htmlFor="pet_name" required>
-            <input
-              id="pet_name"
-              name="pet_name"
-              type="text"
-              required
-              autoComplete="off"
-              defaultValue={v?.pet_name ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Species" htmlFor="pet_species">
-            <select
-              id="pet_species"
-              name="pet_species"
-              defaultValue={v?.pet_species ?? ""}
-              className={inputClass}
-            >
-              <option value="">—</option>
-              <option value="dog">Dog</option>
-              <option value="cat">Cat</option>
-              <option value="other">Other</option>
-            </select>
-          </Field>
-        </div>
+        <Field label="Pet name" htmlFor="pet_name" required>
+          <input
+            id="pet_name"
+            name="pet_name"
+            type="text"
+            required
+            autoComplete="off"
+            defaultValue={v?.pet_name ?? ""}
+            className={inputClass}
+          />
+        </Field>
+        {/* Dogs only — no need to ask. Still recorded on the booking so the
+            data stays meaningful if other species are ever offered. */}
+        <input type="hidden" name="pet_species" value="dog" />
         <Field
           label="Breed"
           htmlFor="pet_breed"

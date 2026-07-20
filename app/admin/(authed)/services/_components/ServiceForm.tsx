@@ -132,7 +132,7 @@ export function ServiceForm({
       <Field
         label="Sort order"
         htmlFor="sort_order"
-        hint="Lower shows first on the Services page."
+        hint="Lower shows first on the Services page. IMPORTANT: under 100 = a bookable groom (appears in the booking form's service dropdown). 100 or over = an optional extra (appears as a tick-box under “Add extras” instead)."
       >
         <input
           id="sort_order"

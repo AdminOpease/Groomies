@@ -166,7 +166,9 @@ export async function submitBooking(
   try {
     payload = {
       p_time_slot_id: slotId,
-      p_service_id: values.service_id,
+      // Required now that "not sure yet" is gone — enforced here too, since
+      // the browser's `required` is trivially bypassed.
+      p_service_id: required(values.service_id, "Service"),
       // A size without a service is incoherent, and the RPC rejects it — so
       // drop it if the customer cleared the service.
       p_service_variant_id: values.service_id ? values.service_variant_id : null,
