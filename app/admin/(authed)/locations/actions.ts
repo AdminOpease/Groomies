@@ -18,6 +18,25 @@ function nullIfBlank(v: FormDataEntryValue | null): string | null {
   return s.length === 0 ? null : s;
 }
 
+/**
+ * "LU, mk , AL" -> ["LU","MK","AL"]
+ *
+ * Area codes only (the letters). Anything with digits is dropped rather than
+ * stored: a district like "LU5" would silently fence out half the town, and a
+ * half-working geo-fence is worse than none.
+ */
+function parsePostcodeAreas(v: FormDataEntryValue | null): string[] {
+  if (typeof v !== "string") return [];
+  return Array.from(
+    new Set(
+      v
+        .split(/[,\s]+/)
+        .map((s) => s.trim().toUpperCase())
+        .filter((s) => /^[A-Z]{1,2}$/.test(s))
+    )
+  );
+}
+
 function parseLocationForm(formData: FormData) {
   const type = formData.get("type") === "stop" ? "stop" : "area";
   const is_active = formData.get("is_active") === "on";
@@ -26,6 +45,7 @@ function parseLocationForm(formData: FormData) {
     type,
     address: nullIfBlank(formData.get("address")),
     description: nullIfBlank(formData.get("description")),
+    postcode_areas: parsePostcodeAreas(formData.get("postcode_areas")),
     is_active,
   };
 }

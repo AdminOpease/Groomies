@@ -9,6 +9,7 @@ type LocationRow = {
   type: "stop" | "area";
   address: string | null;
   description: string | null;
+  postcode_areas?: string[] | null;
   is_active: boolean;
 };
 
@@ -73,6 +74,26 @@ export function LocationForm({
           defaultValue={location?.address ?? ""}
           className="block w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
+      </Field>
+
+      <Field
+        label="Postcode areas covered"
+        htmlFor="postcode_areas"
+        hint="Letters only, comma separated — e.g. “LU” or “LU, MK”. Customers booking this location must have a postcode in one of these areas. Leave empty for no restriction."
+      >
+        <input
+          id="postcode_areas"
+          name="postcode_areas"
+          type="text"
+          placeholder="LU"
+          defaultValue={(location?.postcode_areas ?? []).join(", ")}
+          className="block w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        />
+        <p className="mt-1.5 text-xs text-stone-500">
+          Use the area letters, not the district. “LU” covers all of LU1–LU7
+          (Luton, Dunstable, Houghton Regis, Leighton Buzzard). Entries with
+          numbers are ignored.
+        </p>
       </Field>
 
       <Field

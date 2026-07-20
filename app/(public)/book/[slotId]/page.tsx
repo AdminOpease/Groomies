@@ -29,7 +29,7 @@ async function loadSlot(slotId: string) {
           location_dates!inner (
             id,
             service_date,
-            locations!inner ( id, name, slug, type, address, is_active )
+            locations!inner ( id, name, slug, type, address, is_active, postcode_areas )
           )
         `
       )
@@ -62,6 +62,7 @@ async function loadSlot(slotId: string) {
     type: string;
     address: string | null;
     is_active: boolean;
+    postcode_areas: string[] | null;
   };
   type DateRef = {
     id: string;
@@ -206,6 +207,7 @@ export default async function BookPage({
               depositMode={data.deposit.mode}
               depositPercent={data.deposit.percent}
               paymentsEnabled={data.deposit.paymentsEnabled}
+              coveredAreas={data.location.postcode_areas ?? []}
             />
           </div>
         </FadeIn>

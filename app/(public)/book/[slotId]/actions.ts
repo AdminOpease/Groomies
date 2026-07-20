@@ -20,6 +20,7 @@ export type BookingValues = {
   pet_breed: string | null;
   pet_breed_secondary: string | null;
   service_address: string | null;
+  postcode: string | null;
   notes: string | null;
   consent: boolean;
 };
@@ -94,6 +95,25 @@ function friendlyError(rpcMessage: string): { message: string; code: string } {
         "That size isn't available for the service you picked. Please choose again.",
     };
   }
+  if (rpcMessage.includes("POSTCODE_OUT_OF_AREA")) {
+    return {
+      code: "POSTCODE_OUT_OF_AREA",
+      message:
+        "We're not covering that postcode on this date — we're in a different area. Try another date, or get in touch and we'll let you know when we're next nearby.",
+    };
+  }
+  if (rpcMessage.includes("POSTCODE_REQUIRED")) {
+    return {
+      code: "POSTCODE_REQUIRED",
+      message: "Please add your postcode so we can check we're covering you.",
+    };
+  }
+  if (rpcMessage.includes("POSTCODE_INVALID")) {
+    return {
+      code: "POSTCODE_INVALID",
+      message: "That doesn't look like a UK postcode — please check it.",
+    };
+  }
   if (rpcMessage.includes("ADDON_INVALID")) {
     return {
       code: "ADDON_INVALID",
@@ -137,6 +157,7 @@ export async function submitBooking(
     pet_breed: nullIfBlank(formData.get("pet_breed")),
     pet_breed_secondary: nullIfBlank(formData.get("pet_breed_secondary")),
     service_address: nullIfBlank(formData.get("service_address")),
+    postcode: nullIfBlank(formData.get("postcode")),
     notes: nullIfBlank(formData.get("notes")),
     consent: formData.get("consent") === "on",
   };
@@ -166,6 +187,7 @@ export async function submitBooking(
       p_service_address: values.service_address,
       p_notes: values.notes,
       p_consent_given: values.consent,
+      p_postcode: values.postcode,
     };
   } catch (e) {
     return { ok: false, message: (e as Error).message, values };

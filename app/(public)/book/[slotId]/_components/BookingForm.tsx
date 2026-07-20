@@ -24,6 +24,12 @@ type Service = {
 const money = (cents: number) =>
   `£${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
 
+/** ["LU"] -> "LU"; ["LU","MK"] -> "LU and MK"; ["LU","MK","AL"] -> "LU, MK and AL" */
+function formatAreas(areas: string[]): string {
+  if (areas.length <= 1) return areas[0] ?? "";
+  return `${areas.slice(0, -1).join(", ")} and ${areas[areas.length - 1]}`;
+}
+
 const sizesOf = (s: Service | undefined): Variant[] =>
   [...(s?.service_variants ?? [])].sort((a, b) => a.sort_order - b.sort_order);
 
@@ -45,6 +51,7 @@ export function BookingForm({
   depositMode = "off",
   depositPercent = 0,
   paymentsEnabled = false,
+  coveredAreas = [],
 }: {
   slotId: string;
   services: Service[];
@@ -53,7 +60,11 @@ export function BookingForm({
   depositMode?: "off" | "deposit" | "full";
   depositPercent?: number;
   paymentsEnabled?: boolean;
+  coveredAreas?: string[];
 }) {
+  // Only mandatory where the location actually restricts by area — elsewhere
+  // it's useful but shouldn't block a booking.
+  const postcodeRequired = coveredAreas.length > 0;
   const bound = submitBooking.bind(null, slotId);
   const [state, formAction, pending] = useActionState<
     BookingResult | null,
@@ -459,6 +470,32 @@ export function BookingForm({
             />
           </Field>
         ) : null}
+
+        {/* Postcode is its own field, not buried in the address, because the
+            covered-area check has to read it reliably. It's also the field the
+            address lookup will fill in once that's added. */}
+        <Field
+          label="Postcode"
+          htmlFor="postcode"
+          required={postcodeRequired}
+          hint={
+            coveredAreas.length > 0
+              ? `We're covering ${formatAreas(coveredAreas)} postcodes on this date.`
+              : "So we know exactly where we're heading."
+          }
+        >
+          <input
+            id="postcode"
+            name="postcode"
+            type="text"
+            required={postcodeRequired}
+            autoComplete="postal-code"
+            autoCapitalize="characters"
+            placeholder="LU5 4AB"
+            defaultValue={v?.postcode ?? ""}
+            className={`${inputClass} uppercase`}
+          />
+        </Field>
       </Section>
 
       {/* Notes */}

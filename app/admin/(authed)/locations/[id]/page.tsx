@@ -24,7 +24,7 @@ export default async function EditLocationPage({
   const supabase = await getSupabaseServer();
   const { data: location, error } = await supabase
     .from("locations")
-    .select("id, name, type, address, description, is_active")
+    .select("id, name, type, address, description, postcode_areas, is_active")
     .eq("id", id)
     .single();
 
