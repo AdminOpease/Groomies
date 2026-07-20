@@ -30,6 +30,10 @@ Being built in Ozan's own accounts (GitHub, Supabase, Cloudflare) as a solo proj
 | — | Design pass 1 (olive palette, Fraunces serif, hero photos, sections) | ✅ | `3b57471` |
 | — | Logo/header polish + "from" pricing flag | ✅ | `558012b` |
 | — | Size-tiered pricing (real price list + book-by-size) | ✅ | `a5616dd` |
+| — | Booking add-ons + running total | ✅ | `76192fe` |
+| — | Pricing-guard regression tests (29 total) | ✅ | `0731477` |
+| — | Breed type-ahead + crosses, 30% deposits | ✅ | `8f51e43` |
+| — | Postcode geo-fencing (area level) | ✅ | `8e80e8d` |
 
 **Everything works. Real bookings could be taken today. Design pass is ongoing.**
 
@@ -38,8 +42,10 @@ GitHub: https://github.com/AdminOpease/Groomies
 Supabase project ref: `afbdldaqcibfcmocshvu`  
 Local path: `/Users/ozanulasan/Projects/groomies/`  
 
-⚠️ **Pushing to `main` does not deploy.** Deploys are manual (`pnpm deploy`).
-See the gotcha in §8 — this has already caused the live site to lag `main`.
+Pushing to `main` triggers a Cloudflare build and deploys. `pnpm deploy` is the
+manual fallback. Either way, **verify the live site afterwards** — a green build
+can still ship a site that can't reach the database. See §8 — this was broken
+for most of 2026-07-20 and silently left the live site behind `main`.
 
 ---
 
@@ -102,7 +108,11 @@ Source of truth for the numbers is the owner's printed price list (Full Groom
 - Real customer photos throughout the site (still using Unsplash placeholder + owner's one hero photo)
 - Real testimonials (currently 2 placeholder quotes on home)
 - Sentry error tracking (mentioned in HANDOVER.md but not wired)
-- Cloudflare Web Analytics (enable via CF dashboard, ~2 min)
+- Cloudflare Web Analytics — CODE IS ALREADY WIRED, env-gated on
+  `NEXT_PUBLIC_CF_BEACON_TOKEN` (renders nothing without it). Deliberately
+  waiting for the custom domain: on a CF-proxied domain it works in automatic
+  mode with no token or script at all, so doing it now on workers.dev would be
+  redone and would split stats across two hostnames.
 - Verified Resend sending domain (for real launch — currently sends from `onboarding@resend.dev` placeholder)
 
 **Two setup items owner still needs to do (not blocking):**
@@ -241,7 +251,7 @@ pnpm exec supabase db push --linked --yes   # HANGS SOMETIMES — see gotcha bel
 # When it hangs, paste the migration into the Studio SQL editor instead.
 # Handy: pbcopy < supabase/migrations/<file>.sql   → then ⌘V into Studio
 
-# Deploy (pushing to main does NOT deploy — see §8)
+# Deploy — pushing to main builds automatically; these are the manual fallback
 pnpm exec wrangler login      # once per machine
 pnpm deploy                   # build + deploy to Cloudflare
 pnpm preview                  # build the CF bundle and serve locally first
@@ -263,37 +273,46 @@ Migrations 012 and 013 in this repo have both been applied through Studio at som
 ### Filenames with spaces in `public/`
 Files like `Image Groomies.png` and `Groomies Logo.png` work but are fragile. Next.js handles URL encoding when you reference them in JSX (`src="/Image Groomies.png"`). Fine locally; may cause issues on some CDN configurations. If we hit any weirdness, rename to kebab-case.
 
-### ⚠️ Pushing to `main` does NOT deploy — Cloudflare is not connected to GitHub
+### Deploys: `git push` works, but verify — and know the manual fallback
 
-**This is the one most likely to waste your time and mislead the owner.**
+Cloudflare Workers Builds **is** connected to `AdminOpease/Groomies` and builds
+on push to `main`. Confirmed working 2026-07-20: a push produced a build and a
+new deployment, and the live site still reached Supabase afterwards.
 
-The Worker was created with `wrangler deploy`, not through Cloudflare's Git
-integration. There is no build pipeline watching the repo. So:
+**It was broken for most of that day**, which is worth knowing because the
+failure is silent:
 
-- `git push origin main` uploads code to GitHub and **changes nothing on the live site**
-- The Deployments tab in the dashboard has **no "Create deployment" button** —
-  that button only exists when Workers Builds/Git is configured. Its absence is
-  the tell.
-- The live site can silently lag `main` indefinitely. This actually happened:
-  the size-tier work sat pushed-but-undeployed until someone checked the live URL.
+- The GitHub App authorization had lapsed — Settings showed a connected repo and
+  build config, but no builds fired. A banner said *"This project is
+  disconnected from your Git account."* **Reconnecting via Manage/Disconnect →
+  reconnect fixed it.**
+- While broken, `main` ran several commits ahead of the live site with no
+  indication anything was wrong.
+- **Reconnecting clears the build variables.** They must be re-added or the next
+  build compiles with an undefined Supabase URL.
 
-**To actually deploy:**
+**Where builds appear:** a "Recent builds" section on the Worker (there is no
+top-level "Builds" tab — don't read its absence as "not connected", that
+misdiagnosis cost time).
+
+**Build variables** (Settings → Build) — separate from the Worker's runtime
+"Variables and secrets", and required because `NEXT_PUBLIC_*` is inlined at
+build time:
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+
+**Manual deploy** still works and is the fallback if a build fails:
 ```bash
-pnpm exec wrangler login   # once per machine; opens a browser
-pnpm deploy                # opennextjs-cloudflare build && deploy
+pnpm exec wrangler login   # once per machine
+pnpm deploy
 ```
 
-**Always verify after deploying** — don't trust "it built":
+**Always verify after deploying, however it deployed.** A build can pass and
+still ship a site that cannot reach the database — "green" is not proof:
 ```bash
 curl -s https://groomies.billowing-firefly-f15a.workers.dev/services | grep -c "Full Groom Packages"
 ```
-
 Note `/services` and `/` use `revalidate = 3600` (ISR), so a stale page can
 persist briefly even after a good deploy.
-
-**Worth fixing:** connect the repo (Workers & Pages → groomies → Settings →
-Build → Connect to Git) so pushes deploy themselves. Until then, treat
-"pushed" and "deployed" as two separate steps.
 
 ### Migrations that change an RPC signature need a compatibility shim
 
