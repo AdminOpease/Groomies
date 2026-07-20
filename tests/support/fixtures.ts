@@ -160,10 +160,13 @@ export async function makeService(
 export function validBookingArgs(overrides: Record<string, unknown> = {}) {
   return {
     p_service_id: null,
-    // Both required by the current book_slot signature. PostgREST resolves the
-    // overload by argument names, so omitting them stops matching the function.
+    // All three are required by the current book_slot signature. PostgREST
+    // resolves the overload by argument NAMES, so omitting any one of them
+    // silently matches an older overload — or stops matching at all once that
+    // overload is dropped. Keep this in step with the RPC.
     p_service_variant_id: null,
     p_addon_service_ids: [],
+    p_postcode: null,
     p_customer_name: "Test Customer",
     p_customer_email: `test-${Date.now()}@example.com`,
     p_customer_phone: "+447700000000",
