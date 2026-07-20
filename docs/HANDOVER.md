@@ -60,6 +60,20 @@ For real launch, verify the owner's own domain in Resend so emails come from e.g
 
 ---
 
+### ⚠️ Connect the domain FIRST — it unblocks several other items
+
+Several things are cheaper to do once, after the domain is live, than to set up
+on `*.workers.dev` and redo:
+
+| Item | Why it waits |
+|---|---|
+| **Cloudflare Web Analytics** | On a CF-proxied custom domain it works in *automatic* mode — no token, no script. On `workers.dev` it needs a token-based beacon that would then be redone, splitting stats across two hostnames. Code is already wired and env-gated on `NEXT_PUBLIC_CF_BEACON_TOKEN`; setting the var is all that's left. |
+| **`NEXT_PUBLIC_SITE_URL`** | Sitemap + JSON-LD should point at the real domain |
+| **Resend sending domain** | Emails from `hello@groomies.co.uk` rather than a shared sender — real deliverability difference |
+| **Turnstile** | Site keys are domain-scoped |
+
+---
+
 ## 3. Recommended for launch, ~30 min each
 
 Not in the codebase yet but standard operating equipment for a live consumer product:
