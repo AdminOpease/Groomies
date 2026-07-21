@@ -1,4 +1,4 @@
-# Session handover — Groomies
+# Groomies — Session Handover
 
 For picking the project back up (or handing off to a new Claude Code session). Everything a fresh session needs to be productive in the first 5 minutes.
 
@@ -292,7 +292,7 @@ groomies/
 ├── docs/
 │   ├── HANDOVER.md            owner-transfer checklist
 │   ├── BACKUPS.md             DB restore procedure
-│   └── SESSION_HANDOVER.md    ← this file
+│   └── GROOMIES_SESSION_HANDOVER.md  ← this file
 ├── next.config.ts             includes `images.unsplash.com` in remotePatterns
 ├── open-next.config.ts, wrangler.jsonc
 ├── pnpm-workspace.yaml        approves build scripts (esbuild/sharp/workerd/unrs)
