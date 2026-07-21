@@ -12,9 +12,39 @@ These were created during Phase 1–6 in `Admin@opease.co.uk`'s account. Each ha
 |---|---|---|
 | **GitHub repo** | `AdminOpease/Groomies` | *Best:* transfer ownership in Settings → Danger Zone → Transfer (30 sec). *Alternative:* add owner as admin, keep repo where it is. |
 | **Supabase project** | Project ref `afbdldaqcibfcmocshvu`, org `AdminOpease's Org` | *Best:* fresh project in owner's Supabase org. Push migrations (`supabase db push`), export auth users, re-run `bootstrap_owner`. ~1 hour. *Alternative:* transfer the project between orgs if both use Supabase. |
-| **Cloudflare Workers project** | `groomies` on Admin@opease.co.uk's account | *Best:* owner creates their own Cloudflare account, connects the (transferred) GitHub repo, pastes env vars. 5 min. |
+| **Cloudflare Workers project** | `groomies` on Admin@opease.co.uk's account | Owner creates their own Cloudflare account, connects the (transferred) GitHub repo, pastes env vars. |
+| **Cloudflare zone** `groomies.uk` | Same account, added 2026-07-21 | Owner adds the domain to their own account and recreates the records. **No one-click zone move on the Free plan.** See §1a. |
+| **Domain `groomies.uk`** | Registered at **GoDaddy**, in Ozan's name | Registrar transfer — auth code + 5–7 days. **Start this first**, it's the only step that can't be rushed. |
+| **`hello@groomies.uk`** | Cloudflare Email Routing → `groomiesltd@gmail.com` | Recreate in the owner's account (destination verify + one rule). Part of §1a. |
 
-All three are on free tiers — no cost during handover.
+All free tier — no cost during handover except the domain renewal.
+
+### 1a. Moving the Cloudflare zone — what's actually involved
+
+Cloudflare offers no "transfer this zone to another account" button on Free, so
+the owner rebuilds it. Everything needed is written down in
+[DOMAIN_SETUP.md](./DOMAIN_SETUP.md) — this is transcription, not rediscovery.
+Budget **30–60 minutes**.
+
+Do it in this order, and **change the nameservers last** — the site and email
+keep running on the old account until that final step, so there's no outage
+window:
+
+1. Owner creates a Cloudflare account, **Domains → Onboard a domain** → `groomies.uk`
+2. Recreate the DNS records (Resend's DKIM + `send.` records, the `_dmarc` TXT)
+3. Transfer the GitHub repo, connect it as a Worker, re-add build + runtime vars
+4. Add custom domains `www.groomies.uk` and `groomies.uk` to the Worker
+5. Recreate the apex→www redirect rule (template: *Redirect from root to WWW*)
+6. Recreate Email Routing: verify the destination Gmail, add the `hello@` rule,
+   let Cloudflare add its MX/SPF/DKIM
+7. **Only now** point the registrar's nameservers at the owner's Cloudflare
+8. Re-verify with the checks in DOMAIN_SETUP.md §9
+
+**Why it isn't simpler:** the Cloudflare account is `Admin@opease.co.uk`, shared
+with other opease projects, so handing over the account itself isn't an option.
+Had Groomies been given its own Cloudflare account from the start, handover
+would be a five-minute email change. Worth doing if handover is imminent;
+otherwise the rebuild above is cheaper than redoing it now.
 
 ---
 
@@ -27,7 +57,7 @@ Wait to create these until handover. They belong in the owner's account from day
 | **Resend** — https://resend.com | Booking confirmation emails + owner "new booking" alerts | Free: 3,000 emails/month. Pro: $20/mo above that. |
 | **Stripe** — https://stripe.com | Deposits and full payments when the owner enables them | No monthly fee. ~1.5% + 20p per transaction. Owner needs business bank details to complete signup. Only needed when `business_settings.payments_enabled = true`. |
 | **Cloudflare Turnstile** | Bot protection on the booking form | Free, unlimited. Optional — the honeypot in the form handles most abuse. Enable if we see problems. |
-| **Domain registrar** | e.g. `groomies.co.uk` | £8/year `.co.uk`, ~$10/year `.com`. Cheapest via Cloudflare Registrar (no markup). Register in the owner's name. |
+| ~~**Domain registrar**~~ | **Done — `groomies.uk` is registered and live**, at GoDaddy in Ozan's name. Needs a registrar transfer to the owner, not a fresh purchase. | renewal only |
 | **UK address lookup** — see below | Postcode → address autocomplete on the booking form | ~£5/mo (getaddress.io) or ~2p per lookup (Ideal Postcodes). **Requires a paid account — there is no free option.** |
 
 ### UK address lookup (postcode → address)
@@ -100,8 +130,9 @@ For each of the below, they live in **two** places once we're in production:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project settings | Public (browser) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → API Keys → publishable | Public (browser) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API Keys → secret | **Secret** — server only |
-| `NEXT_PUBLIC_SITE_URL` | The live domain (e.g. `https://groomies.co.uk`) | Public |
+| `NEXT_PUBLIC_SITE_URL` | The live domain — currently `https://www.groomies.uk`. **Build variable**, not a runtime one. | Public |
 | `RESEND_API_KEY` | Resend → API Keys | **Secret** — server only |
+| `RESEND_FROM` | The verified sender, currently `Groomies <hello@groomies.uk>`. Must be on a domain verified in Resend or every send 403s. Unset falls back to Resend's sandbox address, which delivers **only to the Resend account owner** — it looks fine in testing and reaches no customers. | Public-ish — server only |
 | `STRIPE_SECRET_KEY` | Stripe → Developers → API keys | **Secret** — server only, when payments on |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhooks → endpoint signing secret | **Secret** — server only |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe → API keys | Public |
@@ -118,18 +149,41 @@ else is read at runtime and takes effect immediately.
 
 ## 5. Handover session — running order
 
-Single sitting with the owner, ~1 hour end-to-end.
+**Start the registrar transfer days before the session** — see step 0. The rest
+is a single sitting, ~1–1.5 hours.
 
-1. **Domain** — either transfer the existing one to owner's registrar, or owner buys a fresh one via Cloudflare Registrar
-2. **Cloudflare** — owner creates an account, verifies email, adds the domain, enables Cloudflare Web Analytics
-3. **Supabase** — owner creates an org + project (UK/EU region, matches GDPR requirement); dev pushes migrations (`supabase db push`); owner creates their admin auth user via Studio and calls `bootstrap_owner`
-4. **GitHub** — transfer the repo to the owner's GitHub account
-5. **Cloudflare Workers** — owner connects the (now theirs) GitHub repo, pastes all env vars, deploys
-6. **Resend** — owner creates account, adds sending domain (DNS records), gets API key, adds to Cloudflare env vars
-7. **Stripe** (only if going live with deposits) — owner opens account, connects bank, gets keys, adds to Cloudflare env vars, flips `business_settings.payments_enabled = true`
-8. **Custom domain** — connect the domain to the Worker in Cloudflare Pages settings; update `NEXT_PUBLIC_SITE_URL` env var to match
+The guiding rule: **the nameserver change is the last thing you do.** Until
+then the live site and `hello@groomies.uk` keep running from the current
+account, so a half-finished handover never takes the business offline.
 
-Total time depends mostly on DNS propagation (Resend domain verification, Stripe verification) — the clicking parts take <30 minutes.
+0. **Registrar transfer (days ahead)** — unlock `groomies.uk` at GoDaddy, get
+   the auth/EPP code, start the transfer to the owner's registrar. Takes 5–7
+   days and cannot be hurried. Everything else waits on nothing.
+1. **Cloudflare** — owner creates an account and adds `groomies.uk`
+   (*Domains → Onboard a domain*). Records get recreated per
+   [DOMAIN_SETUP.md](./DOMAIN_SETUP.md) §1a. **Do not change nameservers yet.**
+2. **Supabase** — owner creates an org + project (UK/EU region for GDPR); dev
+   pushes migrations (`supabase db push`); owner creates their admin auth user
+   in Studio and calls `bootstrap_owner`
+3. **GitHub** — transfer the repo to the owner's account
+4. **Cloudflare Workers** — owner connects the repo, adds build vars
+   (`NEXT_PUBLIC_*`) and runtime secrets, deploys
+5. **Custom domains + redirect** — add `www.groomies.uk` and `groomies.uk` to
+   the Worker, recreate the apex→www redirect rule
+6. **Resend** — owner creates an account, adds `groomies.uk` as a sending
+   domain, adds the DKIM + `send.` records, sets `RESEND_API_KEY` and
+   `RESEND_FROM`
+7. **Email Routing** — verify the destination Gmail, recreate the `hello@` rule,
+   let Cloudflare add its MX/SPF/DKIM
+8. **Stripe** (only if going live with deposits) — owner opens an account,
+   connects a bank, adds keys, flips `business_settings.payments_enabled = true`
+9. **Cut over** — point the registrar's nameservers at the owner's Cloudflare.
+   This is the only step with any user-visible effect.
+10. **Verify** — run the checks in DOMAIN_SETUP.md §9, then make a **test
+    booking** and confirm both emails arrive. A green deploy is not proof.
+
+Most of the wall-clock is waiting on DNS and Stripe verification; the clicking
+is well under an hour.
 
 ---
 
