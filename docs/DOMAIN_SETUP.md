@@ -8,7 +8,10 @@ Routing, forwarded to Gmail).
 - Public address: `hello@groomies.uk`
 - Enquiries forward to: `groomiesltd@gmail.com`
 - Canonical site: `https://www.groomies.uk` (apex redirects to www)
-- Microsoft 365: subscription kept for now as a **rollback path**, not a live fallback
+- Microsoft 365: **cancel it.** The mailbox has never been logged into and the
+  password is unknown, so the "keep it as a rollback" plan is void — restoring
+  the MX record would deliver mail to an inbox nobody can open. Nothing to
+  preserve, nothing to lose.
 
 ---
 
@@ -166,9 +169,14 @@ Cloudflare → **Rules** → **Redirect Rules** → **Create rule**:
    `autodiscover` CNAME, the `_sip._tls` SRV. Leave the `NETORGFT…` tenant TXT
    until you actually cancel the subscription.
 
-**Rollback if anything's wrong:** delete Cloudflare's MX records, re-add
-`groomies-uk.mail.protection.outlook.com` priority 0, restore the
-`secureserver.net` SPF. Back to the starting state in ~2 minutes.
+**There is no useful rollback, and that's fine.** Restoring the M365 MX would
+route mail to a mailbox with an unknown password. The old setup was never
+reachable, so any working inbox is a strict improvement. Don't burn time
+preserving it.
+
+The `autodiscover` and `lyncdiscover` records were left proxied (broken) for
+the same reason — they only serve Outlook clients connecting to that
+unreachable mailbox. Delete them along with the other M365 records.
 
 Test it: send a mail from your phone to `hello@groomies.uk` and confirm it
 lands in Gmail.
