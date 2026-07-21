@@ -46,6 +46,34 @@ handover, as the authoritative list when checking Cloudflare's import.
 
 ---
 
+## Status
+
+| Step | State |
+|---|---|
+| 1. Zone on Cloudflare | ✅ done 2026-07-21 |
+| 2. Nameservers → Cloudflare | ✅ `maria` + `nolan.ns.cloudflare.com` |
+| 3. Worker custom domains | ✅ `www.groomies.uk` + `groomies.uk` |
+| 4. Apex → www redirect | ✅ 301, path + query preserved |
+| 5. Email Routing | ✅ `hello@groomies.uk` → Gmail, delivery confirmed |
+| 6. Resend sending domain | ⬜ next |
+| 7. DMARC tighten | ⬜ |
+| 8. Cloudflare env vars | ⬜ **site still builds with the old URL until this is done** |
+| 9. End-to-end verify | ⬜ |
+
+**Live at https://www.groomies.uk.** The old `*.workers.dev` URL still resolves
+and is still what `NEXT_PUBLIC_SITE_URL` says until step 8.
+
+Deviations from the plan, worth knowing if this is ever repeated:
+- Cloudflare's DNS import missed nothing, but two records (`autodiscover`,
+  `lyncdiscover`) came in **proxied**, which breaks them. Left broken
+  deliberately — see the M365 note below.
+- Email Routing refused to enable while the Microsoft MX and the
+  `secureserver.net` SPF were present. Both had to be deleted by hand first.
+  Between deleting them and clicking *Add missing records* the domain has **no
+  MX at all** — do those two actions back to back.
+
+---
+
 ## The one thing to understand before starting
 
 A domain has exactly **one** set of MX records. They decide where inbound mail

@@ -40,7 +40,9 @@ Being built in Ozan's own accounts (GitHub, Supabase, Cloudflare) as a solo proj
 
 **Everything works. Real bookings could be taken today. Design pass is ongoing.**
 
-Live URL: `https://groomies.billowing-firefly-f15a.workers.dev` (Cloudflare Workers).  
+Live URL: `https://www.groomies.uk` (Cloudflare Workers; apex 301s to www).
+The old `https://groomies.billowing-firefly-f15a.workers.dev` still resolves.
+Email: `hello@groomies.uk` → Gmail via Cloudflare Email Routing. See [DOMAIN_SETUP.md](./DOMAIN_SETUP.md).  
 GitHub: https://github.com/AdminOpease/Groomies  
 Supabase project ref: `afbdldaqcibfcmocshvu`  
 Local path: `/Users/ozanulasan/Projects/groomies/`  
