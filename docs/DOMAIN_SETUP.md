@@ -78,7 +78,16 @@ and DKIM is just a TXT record — no conflict. Both directions coexist.
 
 ## Step 1 — Add the zone to Cloudflare (nothing breaks yet)
 
-1. Cloudflare Dashboard → **Add a site** → `groomies.uk` → **Free** plan.
+1. [dash.cloudflare.com](https://dash.cloudflare.com) → left sidebar **Domains**
+   → **Onboard a domain** → `groomies.uk` → choose the **automatic DNS scan**
+   option → **Free** plan.
+
+   > **The button is not called "Add a site".** Cloudflare renamed the flow to
+   > *Domains → Onboard a domain*; almost every tutorial still says "Add a
+   > site" and there is no such button any more. Also make sure you are at
+   > **account level** — if the left sidebar is showing Worker settings, click
+   > your account name to back out first, or Domains won't be listed.
+
 2. Cloudflare scans the existing GoDaddy DNS and imports what it finds.
 3. **Check the import against the DNS baseline block above** — all 13 records.
    Cloudflare's scanner is good but not exhaustive, and anything it misses
