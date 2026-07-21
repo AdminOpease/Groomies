@@ -88,6 +88,16 @@ and DKIM is just a TXT record — no conflict. Both directions coexist.
    > **account level** — if the left sidebar is showing Worker settings, click
    > your account name to back out first, or Domains won't be listed.
 
+   **Free plan is deliberate, not a cost compromise.** Pro's headline feature
+   is the WAF, but a WAF protects a web tier that trusts its inputs — and this
+   app's security boundary is Supabase RLS, enforced in Postgres and covered by
+   the security tests. Cloudflare never sees those queries. Worse, WAF managed
+   rules false-positive on free-text form posts, so it could silently block
+   real bookings. For form spam the answer is **Turnstile (free**, already
+   env-gated on `NEXT_PUBLIC_TURNSTILE_SITE_KEY`), not Pro. Free covers
+   everything this project actually relies on: DDoS, SSL, CDN, DNS, Email
+   Routing, Workers custom domains, Redirect Rules, Web Analytics.
+
 2. Cloudflare scans the existing GoDaddy DNS and imports what it finds.
 3. **Check the import against the DNS baseline block above** — all 13 records.
    Cloudflare's scanner is good but not exhaustive, and anything it misses
