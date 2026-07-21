@@ -18,9 +18,16 @@ type SendResult = { ok: boolean; skipped?: boolean; message?: string };
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
-// Resend's default sender for accounts without a verified domain. Fine for
-// testing. Owner should verify their domain before real launch.
-const DEFAULT_FROM = "Groomies <onboarding@resend.dev>";
+// The sender address. Must be on a domain verified in Resend, or Resend
+// rejects the send with a 403 — so this is env-driven and can be corrected
+// without a deploy if the verified domain ever changes.
+//
+// The fallback is `onboarding@resend.dev`, Resend's shared sandbox sender,
+// which works without any verified domain but can ONLY deliver to the address
+// that owns the Resend account. It is a local-dev convenience, never a
+// production sender.
+const DEFAULT_FROM =
+  process.env.RESEND_FROM ?? "Groomies <onboarding@resend.dev>";
 
 async function resendSend(payload: {
   from: string;
