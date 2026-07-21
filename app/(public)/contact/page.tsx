@@ -15,8 +15,10 @@ export default async function ContactPage() {
   const supabase = getSupabasePublic();
   const { data: settings } = await supabase
     .from("public_business_settings")
-    .select("business_name, contact_email, contact_phone")
+    .select("business_name, contact_email, contact_phone, bookings_enabled")
     .single();
+
+  const bookingsEnabled = settings?.bookings_enabled ?? false;
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-14 sm:py-20">
@@ -27,10 +29,19 @@ export default async function ContactPage() {
         <h1 className="mt-2 text-4xl sm:text-5xl font-semibold tracking-tight text-stone-900">
           Get in touch
         </h1>
-        <p className="mt-4 text-lg text-stone-600">
-          Fastest way to book is online — but for anything else, we're happy to
-          hear from you.
-        </p>
+        {bookingsEnabled ? (
+          <p className="mt-4 text-lg text-stone-600">
+            Fastest way to book is online — but for anything else, we're happy
+            to hear from you.
+          </p>
+        ) : (
+          <p className="mt-4 text-lg text-stone-600">
+            Online booking isn't open just yet, so email or a phone call is the
+            way to reach us. Tell us your dog's name and breed, roughly where
+            you are, and what sort of groom you're after — we'll come back to
+            you personally.
+          </p>
+        )}
       </FadeIn>
 
       <FadeIn delay={0.05}>
@@ -69,13 +80,27 @@ export default async function ContactPage() {
         </div>
       </FadeIn>
 
+      <FadeIn delay={0.08}>
+        <div className="mt-8 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <p className="text-xs text-stone-500 uppercase tracking-wider">
+            Where we come to you
+          </p>
+          <p className="mt-2 text-sm text-stone-600 leading-relaxed">
+            We're a mobile service — the van travels to you, so there's no salon
+            to visit. We currently cover Dunstable and the surrounding LU
+            postcodes. Not sure if you're in range? Send us your postcode and
+            we'll tell you straight away.
+          </p>
+        </div>
+      </FadeIn>
+
       <FadeIn delay={0.1}>
         <div className="mt-12">
           <Link
-            href="/locations"
+            href={bookingsEnabled ? "/locations" : "/services"}
             className="inline-flex items-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 shadow-sm transition-colors"
           >
-            Or book a slot →
+            {bookingsEnabled ? "Or book a slot →" : "See our services →"}
           </Link>
         </div>
       </FadeIn>

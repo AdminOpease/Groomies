@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { FadeIn } from "../../_components/FadeIn";
 import { LocationSchedule } from "./_components/LocationSchedule";
+import { BookingsClosed } from "../../_components/BookingsClosed";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -28,13 +29,20 @@ async function fetchLocation(slug: string) {
   return data;
 }
 
-async function fetchShowSlotCounts(): Promise<boolean> {
+async function fetchSettings() {
   const supabase = getSupabasePublic();
   const { data } = await supabase
     .from("public_business_settings")
-    .select("show_slot_counts")
+    .select("show_slot_counts, bookings_enabled, contact_email, contact_phone")
     .single();
-  return data?.show_slot_counts ?? true;
+  return {
+    showSlotCounts: data?.show_slot_counts ?? true,
+    // Default to CLOSED when the settings row can't be read. Failing open would
+    // serve live booking links while the business isn't ready to honour them.
+    bookingsEnabled: data?.bookings_enabled ?? false,
+    contactEmail: data?.contact_email ?? null,
+    contactPhone: data?.contact_phone ?? null,
+  };
 }
 
 export async function generateMetadata({
@@ -59,9 +67,9 @@ export default async function LocationPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [location, showSlotCounts] = await Promise.all([
+  const [location, settings] = await Promise.all([
     fetchLocation(slug),
-    fetchShowSlotCounts(),
+    fetchSettings(),
   ]);
   if (!location) notFound();
 
@@ -105,21 +113,31 @@ export default async function LocationPage({
 
       <section className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">
         <FadeIn delay={0.05}>
-          <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.18em]">
-            Available dates
-          </p>
-          <h2
-            className="mt-2 text-3xl text-stone-900"
-            style={{ fontFamily: "var(--font-display), serif" }}
-          >
-            Pick your slot
-          </h2>
-          <div className="mt-8">
-            <LocationSchedule
-              locationId={location.id}
-              showSlotCounts={showSlotCounts}
+          {settings.bookingsEnabled ? (
+            <>
+              <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.18em]">
+                Available dates
+              </p>
+              <h2
+                className="mt-2 text-3xl text-stone-900"
+                style={{ fontFamily: "var(--font-display), serif" }}
+              >
+                Pick your slot
+              </h2>
+              <div className="mt-8">
+                <LocationSchedule
+                  locationId={location.id}
+                  showSlotCounts={settings.showSlotCounts}
+                />
+              </div>
+            </>
+          ) : (
+            <BookingsClosed
+              contactEmail={settings.contactEmail}
+              contactPhone={settings.contactPhone}
+              subject={`Booking enquiry — ${location.name}`}
             />
-          </div>
+          )}
         </FadeIn>
       </section>
     </div>

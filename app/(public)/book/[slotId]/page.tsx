@@ -5,6 +5,7 @@ import { getSupabasePublic } from "@/lib/supabase/public";
 import { formatDateLondon, formatTime, todayLondonISO } from "@/lib/format";
 import { FadeIn } from "../../_components/FadeIn";
 import { BookingForm } from "./_components/BookingForm";
+import { BookingsClosed } from "../../_components/BookingsClosed";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,9 @@ async function loadSlot(slotId: string) {
       .order("sort_order"),
     supabase
       .from("public_business_settings")
-      .select("deposit_mode, deposit_percent, payments_enabled")
+      .select(
+        "deposit_mode, deposit_percent, payments_enabled, bookings_enabled, contact_email, contact_phone"
+      )
       .maybeSingle(),
   ]);
 
@@ -115,6 +118,11 @@ async function loadSlot(slotId: string) {
       percent: settingsRes.data?.deposit_percent ?? 0,
       paymentsEnabled: settingsRes.data?.payments_enabled ?? false,
     },
+    // Default to CLOSED if settings can't be read — never render a live form
+    // we aren't sure the business can honour.
+    bookingsEnabled: settingsRes.data?.bookings_enabled ?? false,
+    contactEmail: settingsRes.data?.contact_email ?? null,
+    contactPhone: settingsRes.data?.contact_phone ?? null,
   };
 }
 
@@ -129,6 +137,34 @@ export default async function BookPage({
 
   const requiresAddress = data.location.type === "area";
   const isFull = data.remaining <= 0;
+
+  // Direct-link guard. Someone can reach /book/<id> from a bookmark, a shared
+  // link, or a page cached before bookings were closed — so this page has to
+  // check for itself rather than trust that the schedule hid the link.
+  if (!data.bookingsEnabled) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-14">
+        <FadeIn>
+          <nav aria-label="Breadcrumb" className="text-sm text-emerald-800 mb-6">
+            <Link
+              href={`/locations/${data.location.slug}`}
+              className="hover:text-emerald-900 underline underline-offset-4"
+            >
+              {data.location.name}
+            </Link>{" "}
+            / <span aria-current="page">Book</span>
+          </nav>
+        </FadeIn>
+        <FadeIn delay={0.05}>
+          <BookingsClosed
+            contactEmail={data.contactEmail}
+            contactPhone={data.contactPhone}
+            subject={`Booking enquiry — ${data.location.name}`}
+          />
+        </FadeIn>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10 sm:py-14">

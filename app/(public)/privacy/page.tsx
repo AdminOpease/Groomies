@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { FadeIn } from "../_components/FadeIn";
+import { PolicyCover } from "../_components/PolicyCover";
 
 export const revalidate = 86400;
 
+/**
+ * Flip to true to publish the drafted policy below.
+ *
+ * A flag rather than deleting the draft: the text is written and only needs
+ * checking, so it stays in this file ready to go. Noindex stays on while
+ * covered — an indexed "coming soon" legal page is worse than no result.
+ */
+const PUBLISHED = false;
+
 export const metadata: Metadata = {
   title: "Privacy policy",
+  ...(PUBLISHED ? {} : { robots: { index: false, follow: true } }),
 };
 
 async function getContext() {
@@ -30,6 +41,16 @@ async function getContext() {
 
 export default async function PrivacyPage() {
   const c = await getContext();
+
+  if (!PUBLISHED) {
+    return (
+      <PolicyCover
+        title="Privacy policy"
+        blurb="It will set out what we collect when you book, how long we keep it, who it's shared with, and how to ask for your data to be deleted."
+        contactEmail={c.contactEmail}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">

@@ -67,6 +67,7 @@ export async function updateBusinessSettings(
       15
     ),
     show_slot_counts: formData.get("show_slot_counts") === "on",
+    bookings_enabled: formData.get("bookings_enabled") === "on",
   };
 
   const { error } = await supabase

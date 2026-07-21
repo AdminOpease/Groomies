@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { FadeIn } from "../_components/FadeIn";
+import { PolicyCover } from "../_components/PolicyCover";
 
 export const revalidate = 86400;
 
+/** Flip to true to publish the drafted terms below. See privacy/page.tsx. */
+const PUBLISHED = false;
+
 export const metadata: Metadata = {
   title: "Terms of service",
+  ...(PUBLISHED ? {} : { robots: { index: false, follow: true } }),
 };
 
 async function getContext() {
@@ -23,6 +28,16 @@ async function getContext() {
 
 export default async function TermsPage() {
   const c = await getContext();
+
+  if (!PUBLISHED) {
+    return (
+      <PolicyCover
+        title="Terms of service"
+        blurb="It will cover what's included in a groom, how cancellations and no-shows work, our responsibilities and yours, and what happens if a dog can't safely be groomed on the day."
+        contactEmail={c.contactEmail}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">

@@ -10,9 +10,11 @@ const NAV = [
 export function Header({
   businessName,
   logoUrl,
+  bookingsEnabled,
 }: {
   businessName: string;
   logoUrl: string | null;
+  bookingsEnabled: boolean;
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-white/85 backdrop-blur">
@@ -56,11 +58,14 @@ export function Header({
             ))}
           </nav>
 
+          {/* While bookings are closed this still needs to convert — so it
+              points at Contact rather than disappearing or leading to a
+              schedule the visitor can't act on. */}
           <Link
-            href="/locations"
+            href={bookingsEnabled ? "/locations" : "/contact"}
             className="inline-flex items-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
-            Book now
+            {bookingsEnabled ? "Book now" : "Enquire"}
           </Link>
         </div>
         <nav className="sm:hidden flex items-center gap-1 pb-2 -mt-1 overflow-x-auto">

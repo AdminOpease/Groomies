@@ -20,6 +20,7 @@ type Settings = {
   refund_cutoff_hours: number;
   hold_duration_minutes: number;
   show_slot_counts: boolean;
+  bookings_enabled: boolean;
 };
 
 const initial: SettingsState = { ok: true };
@@ -152,6 +153,26 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         title="Booking policies"
         description="Applied to every new booking. Existing bookings aren't affected."
       >
+        <label className="flex items-start gap-3 select-none cursor-pointer">
+          <input
+            type="checkbox"
+            name="bookings_enabled"
+            defaultChecked={settings.bookings_enabled}
+            className="mt-0.5 h-4 w-4 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span>
+            <span className="block text-sm font-medium text-stone-900">
+              Accept online bookings
+            </span>
+            <span className="block text-sm text-stone-500">
+              Turn off to close the public booking flow — visitors see an
+              invitation to email you instead, and the booking pages stop
+              accepting submissions. You can still add bookings yourself from
+              the admin, so phone bookings keep working. Separate from
+              payments: this controls whether people can book at all.
+            </span>
+          </span>
+        </label>
         <label className="flex items-start gap-3 select-none cursor-pointer">
           <input
             type="checkbox"

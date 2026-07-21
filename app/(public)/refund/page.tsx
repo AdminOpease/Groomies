@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { FadeIn } from "../_components/FadeIn";
+import { PolicyCover } from "../_components/PolicyCover";
 
 export const revalidate = 86400;
 
+/**
+ * Flip to true to publish the drafted policy below. See privacy/page.tsx.
+ *
+ * Note for whoever publishes this: the drafted text and CancelButton.tsx
+ * currently promise an automatic refund that nothing issues — the Stripe
+ * routes are stubs. Reconcile the two before this goes live.
+ */
+const PUBLISHED = false;
+
 export const metadata: Metadata = {
   title: "Refund and cancellation policy",
+  ...(PUBLISHED ? {} : { robots: { index: false, follow: true } }),
 };
 
 async function getContext() {
@@ -31,6 +42,16 @@ async function getContext() {
 
 export default async function RefundPage() {
   const c = await getContext();
+
+  if (!PUBLISHED) {
+    return (
+      <PolicyCover
+        title="Refund and cancellation policy"
+        blurb="It will set out how far ahead you can cancel or reschedule free of charge, what happens to a deposit if you cancel later than that, and how we handle it if we have to cancel on you."
+        contactEmail={c.contactEmail}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14 sm:py-20">

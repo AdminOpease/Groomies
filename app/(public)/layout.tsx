@@ -9,7 +9,7 @@ async function getPublicSettings() {
   const { data } = await supabase
     .from("public_business_settings")
     .select(
-      "business_name, logo_url, contact_email, contact_phone, social_links, primary_brand_color, about_blurb"
+      "business_name, logo_url, contact_email, contact_phone, social_links, primary_brand_color, about_blurb, bookings_enabled"
     )
     .single();
   return data ?? {
@@ -20,6 +20,8 @@ async function getPublicSettings() {
     social_links: null,
     primary_brand_color: null,
     about_blurb: null,
+    // Fail closed — see the same reasoning on the booking pages.
+    bookings_enabled: false,
   };
 }
 
@@ -54,6 +56,7 @@ export default async function PublicLayout({
       <Header
         businessName={settings.business_name}
         logoUrl={settings.logo_url}
+        bookingsEnabled={settings.bookings_enabled ?? false}
       />
       <script
         type="application/ld+json"
