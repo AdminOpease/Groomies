@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { FadeIn } from "../_components/FadeIn";
 import { LocationsBrowser } from "./_components/LocationsBrowser";
+import { BookingsClosed } from "../_components/BookingsClosed";
 
 export const revalidate = 3600;
 
@@ -21,10 +22,13 @@ export default async function LocationsPage() {
       .order("name"),
     supabase
       .from("public_business_settings")
-      .select("show_slot_counts")
+      .select(
+        "show_slot_counts, bookings_enabled, contact_email, contact_phone"
+      )
       .single(),
   ]);
   const showSlotCounts = settings?.show_slot_counts ?? true;
+  const bookingsEnabled = settings?.bookings_enabled ?? false;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
@@ -37,17 +41,32 @@ export default async function LocationsPage() {
             Find your area
           </h1>
           <p className="mt-4 text-lg text-stone-600">
-            Pick your area to see the days and slots we're running there. Live
-            availability — nothing that's already booked will show as free.
+            {bookingsEnabled
+              ? "Pick your area to see the days and slots we're running there. Live availability — nothing that's already booked will show as free."
+              : "We're mobile — the van comes to you. Online booking isn't open yet, so tell us where you are and we'll let you know when we're on your street."}
           </p>
         </div>
       </FadeIn>
 
+      {/* This page is the homepage's main call to action. With bookings closed
+          the browser below renders an empty "launching soon" state, which is a
+          dead end for a visitor who arrived ready to book — so ask for the
+          enquiry here instead of letting them bounce. */}
       <div className="mt-12">
-        <LocationsBrowser
-          locations={locations ?? []}
-          showSlotCounts={showSlotCounts}
-        />
+        {bookingsEnabled ? (
+          <LocationsBrowser
+            locations={locations ?? []}
+            showSlotCounts={showSlotCounts}
+          />
+        ) : (
+          <div className="max-w-3xl">
+            <BookingsClosed
+              contactEmail={settings?.contact_email ?? null}
+              contactPhone={settings?.contact_phone ?? null}
+              subject="Booking enquiry — my area"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

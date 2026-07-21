@@ -51,7 +51,7 @@ export default async function HomePage() {
       <ServicesTeaser services={(services ?? []) as Service[]} />
       <StudioMoment />
       <AreasCovered locations={locations ?? []} />
-      <Testimonials />
+      <Commitments />
       <CTABand />
     </div>
   );
@@ -485,17 +485,32 @@ function AreasCovered({
 // Testimonials — trimmed to two, editorial pull-quote layout.
 // ---------------------------------------------------------------------------
 
-function Testimonials() {
-  const quotes = [
+/**
+ * This slot held two invented testimonials ("Anna — Bella, cockapoo" and
+ * "Mark — Rufus, terrier cross"). They were removed when the site went live.
+ *
+ * Fabricated reviews are a banned commercial practice under the Digital
+ * Markets, Competition and Consumers Act 2024, which the CMA can enforce
+ * directly — and the business has not traded yet, so there was no real
+ * customer they could ever have been attributed to.
+ *
+ * Replaced with commitments, which build the same trust without pretending
+ * anyone has said anything. Put real quotes here once real customers give
+ * them, with their permission.
+ */
+function Commitments() {
+  const promises = [
     {
-      body: "Our dog usually shakes on the way to the salon. This time she just wagged. Genuinely can't recommend enough.",
-      name: "Anna",
-      pet: "Bella, cockapoo",
+      t: "One dog per appointment",
+      d: "No crate, no queue, no waiting around while other dogs are done.",
     },
     {
-      body: "Turned up on time, calm with our nervous rescue, and left him looking incredible. Booking the next one already.",
-      name: "Mark",
-      pet: "Rufus, terrier cross",
+      t: "The price you were quoted",
+      d: "Anything extra gets discussed with you before we start, never after.",
+    },
+    {
+      t: "Your dog's welfare first",
+      d: "If a coat is too matted to work through kindly, we'll say so and offer the gentler option.",
     },
   ];
   return (
@@ -503,25 +518,24 @@ function Testimonials() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-24 sm:py-32">
         <FadeIn>
           <p className="text-[11px] font-medium text-emerald-800 uppercase tracking-[0.22em] text-center">
-            Word of mouth
+            Our promise
           </p>
         </FadeIn>
-        <ul className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
-          {quotes.map((q, i) => (
-            <FadeIn key={q.name} delay={i * 0.08}>
-              <li>
+        <ul className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12">
+          {promises.map((p, i) => (
+            // FadeIn goes inside the <li> — a div between <ul> and <li> breaks
+            // list semantics for screen readers.
+            <li key={p.t}>
+              <FadeIn delay={i * 0.08}>
                 <p
                   className="text-2xl sm:text-3xl italic text-stone-800 leading-snug"
                   style={{ fontFamily: "var(--font-display), serif" }}
                 >
-                  &ldquo;{q.body}&rdquo;
+                  {p.t}
                 </p>
-                <p className="mt-6 text-sm text-emerald-800 font-medium">
-                  {q.name}{" "}
-                  <span className="text-stone-500 font-normal">— {q.pet}</span>
-                </p>
-              </li>
-            </FadeIn>
+                <p className="mt-4 text-stone-600 leading-relaxed">{p.d}</p>
+              </FadeIn>
+            </li>
           ))}
         </ul>
       </div>

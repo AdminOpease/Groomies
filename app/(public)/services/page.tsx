@@ -103,15 +103,23 @@ const activeVariants = (s: Service): Variant[] =>
 
 export default async function ServicesPage() {
   const supabase = getSupabasePublic();
-  const { data: raw } = await supabase
-    .from("services")
-    .select(
-      "id, name, description, duration_minutes, price_cents, price_from, category, sort_order, service_variants(id, label, price_cents, price_from, sort_order, is_active)"
-    )
-    .eq("is_active", true)
-    .order("sort_order");
+  const [{ data: raw }, { data: settings }] = await Promise.all([
+    supabase
+      .from("services")
+      .select(
+        "id, name, description, duration_minutes, price_cents, price_from, category, sort_order, service_variants(id, label, price_cents, price_from, sort_order, is_active)"
+      )
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase
+      .from("public_business_settings")
+      .select("bookings_enabled, contact_email")
+      .single(),
+  ]);
   const services = (raw ?? []) as unknown as Service[];
   const sections = groupByCategory(services);
+  const bookingsEnabled = settings?.bookings_enabled ?? false;
+  const contactEmail = settings?.contact_email ?? null;
 
   return (
     <div>
@@ -140,7 +148,10 @@ export default async function ServicesPage() {
       <SpaUpgrades />
       <VipClub />
       <PleaseNote />
-      <ClosingNote />
+      <ClosingNote
+        bookingsEnabled={bookingsEnabled}
+        contactEmail={contactEmail}
+      />
     </div>
   );
 }
@@ -437,7 +448,13 @@ function PleaseNote() {
   );
 }
 
-function ClosingNote() {
+function ClosingNote({
+  bookingsEnabled,
+  contactEmail,
+}: {
+  bookingsEnabled: boolean;
+  contactEmail: string | null;
+}) {
   return (
     <section className="mx-auto max-w-3xl px-4 sm:px-6 py-16 sm:py-24">
       <FadeIn>
@@ -448,10 +465,30 @@ function ClosingNote() {
           >
             Not sure which one to pick?
           </p>
-          <p className="mt-3 text-stone-600 max-w-lg mx-auto">
-            Book any slot — when we arrive we'll take a look at your pet's coat
-            and confirm the right service before we start.
-          </p>
+          {bookingsEnabled ? (
+            <p className="mt-3 text-stone-600 max-w-lg mx-auto">
+              Book any slot — when we arrive we'll take a look at your pet's
+              coat and confirm the right service before we start.
+            </p>
+          ) : (
+            <>
+              <p className="mt-3 text-stone-600 max-w-lg mx-auto">
+                Tell us your dog's breed and roughly how long since their last
+                groom, and we'll tell you which of these is the right one — no
+                obligation.
+              </p>
+              {contactEmail ? (
+                <a
+                  href={`mailto:${contactEmail}?subject=${encodeURIComponent(
+                    "Which service do I need?"
+                  )}`}
+                  className="mt-6 inline-flex items-center rounded-full bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold px-7 py-3.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                >
+                  Ask us
+                </a>
+              ) : null}
+            </>
+          )}
         </div>
       </FadeIn>
     </section>

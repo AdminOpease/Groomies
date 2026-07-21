@@ -187,8 +187,11 @@ export default async function AboutPage() {
                 d: "Your dog goes back through your front door clean and dry. We'll tell you honestly what we found and what to keep an eye on before the next visit.",
               },
             ].map((step, i) => (
-              <FadeIn key={step.t} delay={0.04 * i}>
-                <li className="border-t border-emerald-100/15 pt-5">
+              // FadeIn must sit INSIDE the <li>, not around it: it renders a
+              // div, and a div between <ol> and <li> breaks list semantics for
+              // screen readers.
+              <li key={step.t} className="border-t border-emerald-100/15 pt-5">
+                <FadeIn delay={0.04 * i}>
                   <span
                     className="text-sm italic text-emerald-300/70"
                     style={{ fontFamily: "var(--font-display), serif" }}
@@ -201,8 +204,8 @@ export default async function AboutPage() {
                   <p className="mt-2 text-emerald-100/75 leading-relaxed text-[15px]">
                     {step.d}
                   </p>
-                </li>
-              </FadeIn>
+                </FadeIn>
+              </li>
             ))}
           </ol>
         </div>
