@@ -10,5 +10,9 @@ export default defineConfig({
     hookTimeout: 30_000,
     include: ["tests/**/*.test.ts"],
     fileParallelism: false,
+    // Opens public bookings for the run and restores the flag afterwards.
+    // See the file header — it explains why, and the risk of running this
+    // against the live project.
+    globalSetup: ["tests/support/global-setup.ts"],
   },
 });

@@ -47,6 +47,82 @@ describe("RLS — anon cannot read PII", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Regression: the public views must be READ-ONLY for anon.
+// ---------------------------------------------------------------------------
+// This gap is how a real vulnerability survived from day one. The suite above
+// asserted that anon CAN read public_business_settings — the exception — but
+// never that anon cannot WRITE to it. Because the view selects from a single
+// table it was automatically updatable, and Supabase's default privileges
+// grant ALL on new objects in `public` to anon, a plain PATCH rewrote the
+// underlying row: business name, contact_email, payments_enabled,
+// bookings_enabled. Fixed in 20260721210000 with revoke-all/grant-select.
+//
+// These tests exist because that fix is easy to undo by accident: any future
+// migration that drops and recreates a view and issues a bare `grant select`
+// silently restores the ALL grant. Grants are not RLS, and RLS does not save
+// you here.
+describe("Grants — public views are read-only for anon", () => {
+  it("anon cannot UPDATE business settings through the public view", async () => {
+    const { error } = await anon
+      .from("public_business_settings")
+      .update({ business_name: "PWNED" })
+      .eq("id", true);
+    expect(error).not.toBeNull();
+
+    // ...and nothing actually changed.
+    const { data } = await service
+      .from("business_settings")
+      .select("business_name")
+      .eq("id", true)
+      .single();
+    expect(data?.business_name).not.toBe("PWNED");
+  });
+
+  it("anon cannot re-open bookings through the public view", async () => {
+    // The most damaging version of the same hole: flipping this back on lets
+    // the public book while the business believes it is closed.
+    //
+    // Asserts the value is UNCHANGED rather than false — the owner legitimately
+    // toggles this in /admin/settings, and a test that hard-codes false would
+    // start failing the day they open for business.
+    const { data: before } = await service
+      .from("business_settings")
+      .select("bookings_enabled")
+      .eq("id", true)
+      .single();
+
+    const { error } = await anon
+      .from("public_business_settings")
+      .update({ bookings_enabled: !before?.bookings_enabled })
+      .eq("id", true);
+    expect(error).not.toBeNull();
+
+    const { data: after } = await service
+      .from("business_settings")
+      .select("bookings_enabled")
+      .eq("id", true)
+      .single();
+    expect(after?.bookings_enabled).toBe(before?.bookings_enabled);
+  });
+
+  it("anon cannot DELETE through the public view", async () => {
+    const { error } = await anon
+      .from("public_business_settings")
+      .delete()
+      .eq("id", true);
+    expect(error).not.toBeNull();
+  });
+
+  it("anon cannot write to slot_availability", async () => {
+    const { error } = await anon
+      .from("slot_availability")
+      .update({ remaining: 999 })
+      .neq("slot_id", "00000000-0000-0000-0000-000000000000");
+    expect(error).not.toBeNull();
+  });
+});
+
 describe("RLS — anon can only read active/future availability", () => {
   const cleanups: Array<() => Promise<void>> = [];
   afterAll(async () => {
