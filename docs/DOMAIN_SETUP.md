@@ -6,8 +6,40 @@ Routing, forwarded to Gmail).
 
 **Decisions made 2026-07-21:**
 - Public address: `hello@groomies.uk`
+- Enquiries forward to: `groomiesltd@gmail.com`
 - Canonical site: `https://www.groomies.uk` (apex redirects to www)
 - Microsoft 365: subscription kept for now as a **rollback path**, not a live fallback
+
+---
+
+## DNS baseline — captured 2026-07-21T18:19Z, before any change
+
+This is the complete pre-migration state, verified by `dig` against the live
+GoDaddy nameservers. **It is the rollback reference** — if anything goes wrong
+at any step, these records restore the starting state exactly.
+
+```
+NS      @                          ns55.domaincontrol.com
+NS      @                          ns56.domaincontrol.com
+A       @                          76.223.105.230
+A       @                          13.248.243.5
+CNAME   www                        groomies.uk
+MX      @                    0     groomies-uk.mail.protection.outlook.com
+TXT     @                          v=spf1 include:secureserver.net -all
+TXT     @                          NETORGFT20373999.onmicrosoft.com
+TXT     _dmarc                     v=DMARC1; p=quarantine; adkim=r; aspf=r;
+                                   rua=mailto:dmarc_rua@onsecureserver.net;
+CNAME   autodiscover               autodiscover.outlook.com
+CNAME   lyncdiscover               webdir.online.lync.com
+SRV     _sip._tls            100 1 443   sipdir.online.lync.com
+SRV     _sipfederationtls._tcp  100 1 5061  sipfed.online.lync.com
+```
+
+No AAAA records. No CAA records — nothing blocking certificate issuance.
+
+⚠️ **`lyncdiscover` and `_sipfederationtls._tcp` are not in the older handover
+notes.** They were found only by querying directly. Treat this block, not the
+handover, as the authoritative list when checking Cloudflare's import.
 
 ---
 
@@ -48,20 +80,15 @@ and DKIM is just a TXT record — no conflict. Both directions coexist.
 
 1. Cloudflare Dashboard → **Add a site** → `groomies.uk` → **Free** plan.
 2. Cloudflare scans the existing GoDaddy DNS and imports what it finds.
-3. **Check the import before continuing.** These must all be present, because
-   until step 5 they are what keeps the current setup alive:
+3. **Check the import against the DNS baseline block above** — all 13 records.
+   Cloudflare's scanner is good but not exhaustive, and anything it misses
+   disappears the moment nameservers flip, with nothing left to say what it was.
+   Add any missing record by hand *now*, while the old nameservers are still
+   authoritative and the values are still recoverable.
 
-   ```
-   MX     @              groomies-uk.mail.protection.outlook.com   (pri 0)
-   TXT    @              v=spf1 include:secureserver.net -all
-   TXT    @              NETORGFT20373999.onmicrosoft.com
-   TXT    _dmarc         v=DMARC1; p=quarantine; …
-   CNAME  autodiscover   autodiscover.outlook.com
-   SRV    _sip._tls      sipdir.online.lync.com
-   ```
-
-   Anything missing, add it by hand now. An incomplete import is the classic
-   way this goes wrong — nameservers flip and records silently vanish.
+   Pay particular attention to `lyncdiscover` and `_sipfederationtls._tcp` —
+   scanners commonly miss SRV records, and these two were absent from the
+   project's own notes.
 
 4. Cloudflare shows you two nameservers (e.g. `xxx.ns.cloudflare.com`). Copy them.
 
@@ -110,10 +137,10 @@ Cloudflare → **Rules** → **Redirect Rules** → **Create rule**:
 
 1. Cloudflare → the `groomies.uk` zone → **Email** → **Email Routing** →
    **Get started**.
-2. **Destination address first.** Add the Gmail that should receive enquiries.
-   Cloudflare sends it a verification email — **click that link before going
-   further**, or routing silently drops mail.
-3. Custom address: `hello@groomies.uk` → forward to that verified Gmail.
+2. **Destination address first.** Add `groomiesltd@gmail.com` as the
+   destination. Cloudflare sends it a verification email — **click that link
+   before going further**, or routing silently drops mail.
+3. Custom address: `hello@groomies.uk` → forward to `groomiesltd@gmail.com`.
 4. Optionally add a catch-all → same Gmail, so a typo'd address still reaches you.
 5. Enable Email Routing. Cloudflare replaces the MX records and updates SPF.
 6. **Remove the now-dead M365 records:** the `secureserver.net` SPF TXT, the
