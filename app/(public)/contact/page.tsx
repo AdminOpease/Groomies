@@ -83,13 +83,15 @@ export default async function ContactPage() {
       <FadeIn delay={0.08}>
         <div className="mt-8 rounded-2xl border border-stone-200 bg-stone-50 p-5">
           <p className="text-xs text-stone-500 uppercase tracking-wider">
-            Where we come to you
+            Where we work
           </p>
           <p className="mt-2 text-sm text-stone-600 leading-relaxed">
-            We're a mobile service — the van travels to you, so there's no salon
-            to visit. We currently cover Dunstable and the surrounding LU
-            postcodes. Not sure if you're in range? Send us your postcode and
-            we'll tell you straight away.
+            We're mobile, so there's no salon to visit. Depending on the day and
+            your postcode, we either park outside your house or you meet the van
+            at a scheduled local stop — each date on the site says which. We
+            currently cover Dunstable and the surrounding LU postcodes. Not sure
+            if you're in range? Send us your postcode and we'll tell you
+            straight away.
           </p>
         </div>
       </FadeIn>

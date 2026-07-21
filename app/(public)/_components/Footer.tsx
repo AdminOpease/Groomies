@@ -34,7 +34,7 @@ export function Footer({ settings }: { settings: Settings }) {
             )}
           </div>
           <p className="mt-3 text-sm text-stone-500">
-            Premium mobile pet grooming — we come to you.
+            Premium mobile dog grooming — at your door or at a local stop.
           </p>
         </div>
 

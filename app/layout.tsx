@@ -25,11 +25,11 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: "Groomies — Mobile pet grooming that comes to you",
+    default: "Groomies — Mobile dog grooming without the salon",
     template: "%s · Groomies",
   },
   description:
-    "Premium mobile pet grooming. Our vans travel to your area on scheduled days — book a slot online in minutes.",
+    "Premium mobile dog grooming around Dunstable and the LU postcodes. We park at your door in the areas we cover, or you meet the van at a scheduled stop — book a slot online in minutes.",
 };
 
 export default function RootLayout({

@@ -8,7 +8,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Mobile dog grooming that comes to your door in Dunstable and the surrounding LU postcodes. One dog at a time, in a fully-equipped van, with no salon queue and no kennel wait.",
+    "Mobile dog grooming in Dunstable and the surrounding LU postcodes. We come to your door in the areas we cover, or you meet the van at a scheduled stop. One dog at a time, no salon queue, no kennel wait.",
 };
 
 /**
@@ -42,13 +42,16 @@ export default async function AboutPage() {
             <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.22em]">
               About {businessName}
             </p>
+            {/* Must hold true for BOTH service models — door-to-door areas and
+                fixed stops. Anything that promises "to your door" outright is
+                false for stop customers. */}
             <h1
               className="mt-4 text-4xl sm:text-6xl leading-[1.03] tracking-tight text-stone-900"
               style={{ fontFamily: "var(--font-display), serif" }}
             >
-              The salon comes
+              One van.
               <br />
-              <em className="italic">to your door.</em>
+              <em className="italic">One dog at a time.</em>
             </h1>
             <div className="mt-6 h-px w-12 bg-emerald-800/30" />
             <p className="mt-7 text-lg sm:text-xl leading-relaxed text-stone-700">
@@ -91,8 +94,10 @@ export default async function AboutPage() {
                 <p className="mt-2 text-stone-600 leading-relaxed">
                   For a lot of dogs the car is already the worst part of the
                   day, and they arrive at the groomer's stressed before anyone
-                  has touched them. We park outside your house. Your dog walks a
-                  few steps from your front door and that's the entire commute.
+                  has touched them. Depending on where you live we either park
+                  outside your house, or you meet the van at a scheduled local
+                  stop — minutes away, not a trip across town. Either way your
+                  dog comes home the moment we're finished.
                 </p>
               </div>
             </div>
@@ -148,6 +153,71 @@ export default async function AboutPage() {
       </section>
 
       {/* ---------------------------------------------------------------- */}
+      {/* Two service models                                                */}
+      {/* ---------------------------------------------------------------- */}
+      {/* locations.type drives this: 'area' = we drive to the customer and
+          they give their address at booking; 'stop' = the van parks somewhere
+          fixed and customers come to it. Both are real, and the site said
+          nothing about the second one — so anyone booking a stop expected us
+          to turn up at their house. */}
+      <section className="bg-[color:var(--brand-soft)] border-y border-emerald-900/10">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-20 sm:py-28">
+          <FadeIn>
+            <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-[0.22em]">
+              How it works
+            </p>
+            <h2
+              className="mt-3 text-3xl sm:text-4xl text-stone-900"
+              style={{ fontFamily: "var(--font-display), serif" }}
+            >
+              Two ways to see us
+            </h2>
+            <p className="mt-5 max-w-2xl text-stone-600 leading-relaxed">
+              Which one applies depends on where you are — every date on the
+              site says clearly which it is before you book.
+            </p>
+          </FadeIn>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            <FadeIn delay={0.04}>
+              <div className="h-full rounded-2xl border border-emerald-200 bg-white p-6">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium px-2.5 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  We come to you
+                </span>
+                <h3 className="mt-4 font-semibold text-stone-900">
+                  In the areas we cover
+                </h3>
+                <p className="mt-2 text-stone-600 leading-relaxed text-[15px]">
+                  The van parks outside your house and your dog is groomed a few
+                  steps from your own front door. You give us your address when
+                  you book, and we check the postcode is on our round that day.
+                </p>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.06}>
+              <div className="h-full rounded-2xl border border-blue-200 bg-white p-6">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium px-2.5 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  Meet us at a stop
+                </span>
+                <h3 className="mt-4 font-semibold text-stone-900">
+                  At a set place and time
+                </h3>
+                <p className="mt-2 text-stone-600 leading-relaxed text-[15px]">
+                  On some days the van is parked up somewhere local and you bring
+                  your dog to us. You'll see the exact address and time slot
+                  before you book, and the groom itself is identical — you just
+                  wait nearby instead of indoors.
+                </p>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
       {/* What actually happens                                             */}
       {/* ---------------------------------------------------------------- */}
       <section className="relative bg-emerald-900 text-emerald-50 overflow-hidden">
@@ -184,7 +254,7 @@ export default async function AboutPage() {
               },
               {
                 t: "We hand them straight back",
-                d: "Your dog goes back through your front door clean and dry. We'll tell you honestly what we found and what to keep an eye on before the next visit.",
+                d: "Your dog comes back to you clean and dry — no all-day drop-off, no picking them up hours later. We'll tell you honestly what we found and what to keep an eye on before the next visit.",
               },
             ].map((step, i) => (
               // FadeIn must sit INSIDE the <li>, not around it: it renders a
@@ -353,7 +423,7 @@ export default async function AboutPage() {
             </h2>
             <p className="mt-5 text-emerald-100/80 leading-relaxed">
               {bookingsEnabled
-                ? "Pick a date that suits you and we'll come to your door."
+                ? "Pick a date and place that suit you, and we'll do the rest."
                 : "Online booking isn't open just yet, but we're taking enquiries now — and getting in touch early means first pick of dates when they open."}
             </p>
             <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">

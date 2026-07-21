@@ -8,7 +8,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Services & Prices",
   description:
-    "Our mobile grooming services and prices, by dog size. Bath, dry, trim, nails — done at your door.",
+    "Our mobile grooming services and prices, by dog size. Bath, dry, trim, nails — done in the van, at your door or at a local stop.",
 };
 
 function formatPrice(cents: number): string {

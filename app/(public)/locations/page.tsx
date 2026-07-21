@@ -43,7 +43,7 @@ export default async function LocationsPage() {
           <p className="mt-4 text-lg text-stone-600">
             {bookingsEnabled
               ? "Pick your area to see the days and slots we're running there. Live availability — nothing that's already booked will show as free."
-              : "We're mobile — the van comes to you. Online booking isn't open yet, so tell us where you are and we'll let you know when we're on your street."}
+              : "We're mobile — we either park at your door or you meet the van at a local stop. Online booking isn't open yet, so tell us where you are and we'll let you know what's running near you."}
           </p>
         </div>
       </FadeIn>

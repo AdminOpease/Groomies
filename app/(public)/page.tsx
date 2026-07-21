@@ -85,15 +85,16 @@ function Hero() {
                 className="mt-6 text-[3.75rem] sm:text-7xl lg:text-[5.5rem] leading-[0.95] text-stone-900 tracking-tight"
                 style={{ fontFamily: "var(--font-display), serif" }}
               >
-                Grooming that
+                Grooming without
                 <br />
-                <span className="italic text-emerald-800">comes to you.</span>
+                <span className="italic text-emerald-800">the salon.</span>
               </h1>
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="mt-8 text-lg text-stone-700 max-w-md">
-                A calm, careful groom in a fully-equipped mobile studio at your
-                door. Book online in a minute — we'll take it from there.
+                A calm, careful groom in a fully-equipped van — parked at your
+                door in the areas we cover, or at a scheduled local stop. Book
+                online in a minute and we'll take it from there.
               </p>
             </FadeIn>
             <FadeIn delay={0.15}>
@@ -201,8 +202,8 @@ function HowItWorks() {
     {
       n: "Two",
       badge: "Step 02",
-      title: "We arrive to you",
-      body: "The mobile studio pulls up at your door — no commute, no waiting room, no crate stress.",
+      title: "We meet the van",
+      body: "It parks at your door, or somewhere local if that's the day's stop — either way, no waiting room and no crate stress.",
     },
     {
       n: "Three",
@@ -389,7 +390,7 @@ function StudioMoment() {
             </h2>
             <p className="mt-7 text-emerald-100/85 leading-relaxed max-w-md text-lg">
               Warm water on-board, low-noise dryers, hypoallergenic products,
-              one pet at a time. All of it arrives at your door.
+              one pet at a time. All of it on four wheels.
             </p>
             <div className="mt-9">
               <Link
