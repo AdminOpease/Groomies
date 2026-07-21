@@ -34,6 +34,9 @@ Being built in Ozan's own accounts (GitHub, Supabase, Cloudflare) as a solo proj
 | — | Pricing-guard regression tests (29 total) | ✅ | `0731477` |
 | — | Breed type-ahead + crosses, 30% deposits | ✅ | `8f51e43` |
 | — | Postcode geo-fencing (area level) | ✅ | `8e80e8d` |
+| — | Drop 13-arg book_slot shim | ✅ | `beb5d88` |
+| — | Cloudflare Web Analytics (env-gated, dormant) | ✅ | `3906d8c` |
+| — | Booking form: require groom, split extras, drop species | ✅ | `f5f45f3` |
 
 **Everything works. Real bookings could be taken today. Design pass is ongoing.**
 
@@ -102,6 +105,119 @@ Grooming is priced by dog size, so one `services.price_cents` was never enough.
 
 Source of truth for the numbers is the owner's printed price list (Full Groom
 £45/£55/£70/£85 from; Bath & Freshen £30/£40/£50/£60 exact).
+
+**Add-ons.** `booking_addons` holds extras attached to a booking; each row
+snapshots the service's price AND name, so a later rename or deletion never
+rewrites history. `bookings.total_cents` = main + extras, also a snapshot. An
+extra must be an active service with no size tiers and can't repeat the main
+service (`ADDON_INVALID`, P0009); duplicates are deduped, not double-charged.
+
+**⚠️ The `sort_order >= 100` rule is load-bearing.** It decides whether a
+service is a bookable groom or an optional extra:
+
+| sort_order | Where it appears |
+|---|---|
+| under 100 | the booking form's **service dropdown** (a groom you book) |
+| 100 or over | the **"Add extras"** tick-boxes |
+
+It also drives the old signature/add-on split. Before this was enforced, both
+lists were wrong in *both* directions — every spa extra appeared as a bookable
+service, and Puppy Introduction / Hand Stripping / De-Matting appeared as
+tick-on extras. The admin's sort-order hint now spells this out; keep it that
+way if you change the rule.
+
+**Deposits.** `business_settings.deposit_percent` (default 30). `book_slot`
+computes the deposit from the booking's own total and snapshots it onto
+`bookings.deposit_cents`. Two switches that mean different things:
+
+- `deposit_mode` (`off` / `deposit` / `full`) — what is **owed**
+- `payments_enabled` — whether we **collect** it
+
+They're deliberately separate, which is what makes "works the moment Stripe is
+connected" true: the amount is already calculated, stored and displayed
+everywhere. **Currently `deposit_mode = 'deposit'` at 30%, `payments_enabled =
+false`** — so customers see "Deposit (30%) £25.50 · payable on the day".
+
+**Geo-fencing.** `locations.postcode_areas text[]` — allowed postcode **AREAS**
+(letters only: `{LU}`). Empty = no restriction. `bookings.postcode` stores the
+normalised postcode separately from the free-text address, because you cannot
+fence reliably on an address blob. Errors: `POSTCODE_REQUIRED` (P0010),
+`POSTCODE_INVALID` (P0011), `POSTCODE_OUT_OF_AREA` (P0012), all checked before
+the capacity check so a rejection never consumes a slot.
+
+**Area level, not district — this was a deliberate call.** A town does not map
+to one postcode: Dunstable is LU5 **and** LU6, and LU6 itself spills into
+Buckinghamshire and Dacorum (verified against postcodes.io). Area level also
+avoids a silent bug — with district rules, naive prefix matching makes `MK4`
+match `MK46` too, accepting a booking 20 miles away. Comparing only the letters
+cannot fail that way. **Dunstable is currently fenced to `LU`.**
+
+**Breeds.** `lib/dog-breeds.ts` — 188 breeds bundled locally (no API, no cost,
+can't break the form if a third party is down), including the crossbreeds that
+matter most to a groomer. Native `<datalist>` type-ahead; anything off-list can
+still be typed. "It's a cross of two breeds" reveals a second field, stored as
+one value via `combineBreeds()` → `"Cockapoo × Poodle"`. Deliberately NOT a new
+column: breed is informational, and this avoided a fourth `book_slot` signature
+change. Species is always `dog` (hidden field) — the selector was removed.
+
+### ⚠️ Two live issues to resolve before taking real money
+
+**1. The cancellation message promises a refund that nothing issues.**
+
+`app/(public)/manage/[token]/_components/CancelButton.tsx` tells a customer
+cancelling inside the refund window:
+
+> "Your deposit will be refunded automatically — allow a few business days for
+> it to land."
+
+**Nothing triggers a refund.** The Stripe checkout route and webhook are both
+stubs returning 501. `payment_status` can hold `'refunded'` but nothing sets it.
+
+Harmless today (payments are off, no money is taken) but **the moment Stripe is
+connected this becomes a false promise to paying customers** — the kind that
+produces chargebacks. Either wire refunds up, or reword to "we'll process your
+refund manually". Owner was told; not yet actioned.
+
+**2. Payments state, accurately:**
+
+| | |
+|---|---|
+| Booking reference | ✅ exists — `GR-XXXXX`, ambiguous characters excluded so it reads over the phone |
+| Receipts | ❌ none from us. Stripe can send its own (dashboard → Customer emails). Our confirmation email exists but is dormant and doesn't itemise price/deposit. |
+| Refunds | ❌ not implemented. Manual via Stripe Dashboard is fine at this volume — money returns to the original card automatically; we never see or store card/bank details. |
+
+### ⚠️ Domain: `groomies.uk` has LIVE email and a live site — do not touch DNS yet
+
+Checked 2026-07-20. The domain is registered at **GoDaddy** (`ns55/ns56.domaincontrol.com`) and is **actively in use**:
+
+```
+MX      groomies-uk.mail.protection.outlook.com   ← Microsoft 365, LIVE
+TXT     NETORGFT20373999.onmicrosoft.com          ← M365 tenant (GoDaddy-resold)
+SPF     v=spf1 include:secureserver.net -all
+DMARC   v=DMARC1; p=quarantine; …
+CNAME   autodiscover → autodiscover.outlook.com
+SRV     _sip._tls → sipdir.online.lync.com
+A       76.223.105.230 / 13.248.243.5  → GoDaddy Website Builder site (HTTP 200)
+```
+
+**Pointing nameservers at Cloudflare moves ALL DNS.** Without recreating those
+records first, **the owner's email stops arriving instantly** — and email
+failure is silent, so nobody notices until customers complain.
+
+Owner wants "everything directed to their Gmail", which could mean either:
+- **Keep M365**, forward to Gmail (set up inside M365, not DNS). Nothing breaks.
+- **Drop M365**, use Cloudflare Email Routing → Gmail (free). Mailbox stops
+  receiving; anything in it must be exported first, and the GoDaddy
+  subscription cancelled.
+
+**Questions the owner must answer before any DNS change** (asked 2026-07-20,
+answers pending):
+1. Do you use the `@groomies.uk` mailbox? Is there mail worth keeping?
+2. Are you paying for that Microsoft 365 subscription?
+3. Keep M365 + forward, or switch to free forwarding?
+4. What address should people write to, and which Gmail should it land in?
+5. The GoDaddy site will be replaced — anything on it worth keeping?
+6. Is `groomies.uk` on any printed material (van, flyers)?
 
 **Not yet done (nice-to-haves, not blockers):**
 - Supabase Storage bucket + admin upload UI for logo/photos (owner uploaded logo + hero via `public/` for now; Storage is planned so they can swap via /admin)
@@ -205,6 +321,11 @@ All applied to remote Supabase (some via CLI, some pasted directly into Studio w
                                              # booking price snapshot,
                                              # tier-aware book_slot (+ old-
                                              # signature compat shim)
+20260719200000_booking_addons.sql            # booking_addons, total_cents
+20260719220000_drop_book_slot_shim.sql       # dropped the 12-arg shim
+20260719230000_deposit_percentage.sql        # deposit_percent + deposit maths
+20260720000000_postcode_geofence.sql         # postcode_areas, bookings.postcode
+20260720010000_drop_book_slot_13arg_shim.sql # dropped the 13-arg shim
 ```
 
 ---
@@ -260,6 +381,39 @@ pnpm preview                  # build the CF bundle and serve locally first
 ---
 
 ## 8. Gotchas (order of "would have wasted an hour on this")
+
+### Never `pkill` a user-facing app (this closed Ozan's browser)
+
+`pkill -f "Google Chrome"` was used to clear stuck **headless** Chrome
+processes. It matches the real browser too, and force-quit Ozan's actual
+windows and tabs mid-work. Don't do it.
+
+If a headless browser hangs: launch it with its own
+`--user-data-dir=$(mktemp -d)` and kill only that, or just leave it. Better
+still, prefer `curl` + parsing — a real browser is only needed when JavaScript
+must actually run (e.g. availability, which is client-side rendered).
+
+### Don't run `pnpm build` / `pnpm deploy` while `pnpm dev` is running
+
+They share the `.next` directory. The production build corrupts the dev
+server's state and Turbopack panics with `Next.js package not found`. Symptom:
+the dev server still answers requests, but the browser reloads endlessly
+because hot-reload is broken.
+
+Fix: `pkill -f "next dev"`, `rm -rf .next`, restart. Stop the dev server before
+any build.
+
+### Server HTML ≠ what the user sees
+
+Availability (dates, slots, `/book/` links) is fetched **client-side**. So
+`curl` on `/locations/dunstable` legitimately shows "Loading available dates…"
+and zero `/book/` links — that is **not** a bug. Twice this was misread as a
+broken site. To check availability you must actually run JavaScript, or just
+ask the user to look.
+
+Conversely `/services` is server-rendered, so it can look fine while the
+client-side booking flow is broken. Checking only one proves nothing about the
+other.
 
 ### The Supabase CLI hangs on `db push`
 Sometimes hangs at "Initialising login role..." with no error. Workaround that always works:
@@ -361,6 +515,32 @@ The user has a memory note about this too:
 
 ## 9. Design language — where we've landed
 
+### ⚠️ Olive branches — attempted and REVERTED, needs a reference before retrying
+
+Owner asked for "olive branches on the sides of each page" (echoing the leaf
+motif on the printed price list). Two attempts were made and both rejected:
+
+1. `fixed` position, 7% opacity, behind content — rejected: "not the design I
+   wanted nor the way it's moving with the page" (fixed made them hover while
+   the page scrolled).
+2. `absolute`, 25% opacity, z-10 above the section backgrounds — rejected:
+   "even worse".
+
+**Both were reverted** (nothing committed; the Services hero laurel was
+restored). `PageBranches.tsx` no longer exists.
+
+One real constraint learned: the page sections have solid full-width
+backgrounds (`bg-white`, `bg-emerald-50`), so anything placed *behind* them is
+invisible regardless of opacity. Decoration has to overlay (with
+`pointer-events-none`) or live inside a section.
+
+**Do not retry from a guess.** Get a screenshot or reference first, and
+establish: placement (top corners vs full-length sides), prominence (graphic vs
+watermark), and whether the existing `LaurelIcon` artwork itself is wrong — it
+is a stiff symmetrical spray, whereas the price list uses a looser natural
+olive branch. The shape may be the actual problem, not the position.
+
+
 Fluid, but the direction so far:
 - **Palette:** olive brand (`#6d7042` primary, `#545732` strong, `#f5f1e0` soft cream) + stone neutrals + warm cream body (`#f8f4e6`). Tailwind's `emerald` scale is remapped to this olive in `app/globals.css`.
 - **Type:** Fraunces (variable serif) for display — usually italic-inflected, uppercase eyebrows with tracking `[0.22em]`. Geist for body.
@@ -406,18 +586,27 @@ If picking up in a fresh session, those load automatically.
 
 ## 12. Immediate next steps (if the user asks "what next?")
 
-Likely in this order — but wait for user input, don't just push:
+Current settings state (checked 2026-07-20): geo-fence **ON** (Dunstable = LU),
+deposits **ON** (30%, `payments_enabled=false`), `contact_email` **NOT SET**,
+`RESEND_API_KEY` **NOT SET**, Stripe **NOT SET**.
 
-1. **Connect Cloudflare to GitHub** so pushes deploy themselves — see the §8
-   gotcha. Highest value: it removes a whole class of "I thought it was live" bugs.
-2. **Drop the `book_slot` compat shim** — the tier-aware build is deployed, so the
-   old 11-arg signature is now dead code:
-   `drop function if exists public.book_slot(uuid, uuid, text, text, text, text, text, text, text, text, boolean);`
-   Harmless to leave; just tidy.
-3. **Set business_settings.contact_email** (via /admin/settings) so owner alerts have somewhere to land
-4. **Add RESEND_API_KEY** to `.env.local` and Cloudflare env — start actually sending emails
-5. **Supabase Storage bucket + upload UI** — so owner can manage logo/photos from the admin (not `public/`)
-6. **Real photos throughout** — currently just hero. Studio-moment, testimonials, and areas would benefit
-7. **Continue design polish** — user was cycling through opinions; small increments, not big passes
+1. **`contact_email` in `/admin/settings`** — 30 seconds. Right now the footer
+   shows no way to reach the business and owner alert emails have nowhere to go.
+2. **Domain (`groomies.uk`)** — but ONLY after the owner answers the email
+   questions in §3. It unblocks four things at once: CF Web Analytics
+   (automatic mode, code already wired), `NEXT_PUBLIC_SITE_URL`, the Resend
+   sending domain, and Turnstile.
+3. **Resend + `SUPABASE_SERVICE_ROLE_KEY`** as an encrypted Cloudflare runtime
+   secret. Today a real booking notifies **nobody** — not the customer, not the
+   owner. Biggest functional gap.
+4. **Fix the refund promise** in `CancelButton.tsx` (see §3) before Stripe.
+5. **Real photos + testimonials** — the genuine launch blockers. The two
+   homepage quotes are invented, which is not OK on a live business site.
+6. **Stripe** — everything up to the connection is built.
+7. **Address lookup** — owner needs to pick a paid provider (~£5/mo
+   getaddress.io or ~2p/lookup Ideal Postcodes). Options and costs are in
+   HANDOVER.md. The postcode field already exists, so this is autofill only.
+8. **Olive branches** — see §9; needs a visual reference first.
 
-Anything larger (Stripe wire-up, Turnstile, Sentry, WCAG audit, real launch prep) should be a fresh explicit conversation.
+Anything larger (Supabase Storage, Sentry, WCAG audit, Turnstile) should be a
+fresh explicit conversation.
