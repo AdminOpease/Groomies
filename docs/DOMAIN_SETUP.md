@@ -232,6 +232,22 @@ curl -sI https://groomies.uk | head -1           # 301
 curl -s https://www.groomies.uk/services | grep -c "Full Groom Packages"   # non-zero
 ```
 
+**Check `robots.txt` survived.** The onboarding flow has a *"Block training in
+robots.txt"* toggle (left ON) which makes Cloudflare inject AI-crawler
+directives into `robots.txt`. But this app generates its own via
+`app/robots.ts`, carrying the sitemap pointer and the `/admin`, `/book`,
+`/manage`, `/api` disallows. If Cloudflare replaces rather than appends, those
+are silently lost:
+
+```bash
+curl -s https://www.groomies.uk/robots.txt
+```
+
+Expect to see BOTH the app's `Disallow:` lines and `Sitemap:
+https://www.groomies.uk/sitemap.xml`, alongside whatever Cloudflare added. If
+the app's rules are gone, turn the toggle off (zone → **AI Crawl Control**) and
+handle AI bots in `app/robots.ts` instead, so there is one source of truth.
+
 Then the real test: **make a test booking** and confirm both emails arrive —
 the customer confirmation and the owner alert. Check the confirmation lands in
 the inbox rather than spam.
