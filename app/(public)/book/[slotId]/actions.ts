@@ -7,6 +7,7 @@ import {
   sendOwnerNotification,
 } from "@/lib/email";
 import { combineBreeds } from "@/lib/dog-breeds";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export type BookingValues = {
   service_id: string | null;
@@ -138,6 +139,23 @@ export async function submitBooking(
     return {
       ok: false,
       message: "Something looked off with your submission.",
+    };
+  }
+
+  // Turnstile — the layer above the honeypot, which a headless browser driving
+  // the real form would sail straight through. No-ops entirely until the keys
+  // are set. Checked before any database work, so a rejected submission never
+  // touches slot capacity. `cf-turnstile-response` is Cloudflare's fixed field
+  // name, injected into the form by the widget script.
+  const turnstile = await verifyTurnstile(
+    nullIfBlank(formData.get("cf-turnstile-response"))
+  );
+  if (!turnstile.ok) {
+    return {
+      ok: false,
+      code: "TURNSTILE_FAILED",
+      message:
+        "We couldn't verify that you're human. Please refresh the page and try again — or give us a call and we'll book you in.",
     };
   }
 

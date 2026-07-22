@@ -56,7 +56,7 @@ Wait to create these until handover. They belong in the owner's account from day
 |---|---|---|
 | **Resend** — https://resend.com | Booking confirmation emails + owner "new booking" alerts | Free: 3,000 emails/month. Pro: $20/mo above that. |
 | **Stripe** — https://stripe.com | Deposits and full payments when the owner enables them | No monthly fee. ~1.5% + 20p per transaction. Owner needs business bank details to complete signup. Only needed when `business_settings.payments_enabled = true`. |
-| **Cloudflare Turnstile** | Bot protection on the booking form | Free, unlimited. ⚠️ **Currently there is NO bot protection of any kind** — this row previously claimed "the honeypot in the form handles most abuse", but no honeypot exists in the code (checked 2026-07-21). The booking form is a public unauthenticated POST with no rate limit. Wire Turnstile before opening bookings. |
+| **Cloudflare Turnstile** | Bot protection on the booking form | Free, unlimited. There **is** already a honeypot (`hp_field` in BookingForm, checked first thing in `submitBooking`), which stops naive form-spam bots. Turnstile is the stronger layer: a honeypot does nothing against a headless browser driving the real form, and there is still no rate limit. Worth wiring before bookings open. |
 | ~~**Domain registrar**~~ | **Done — `groomies.uk` is registered and live**, at GoDaddy in Ozan's name. Needs a registrar transfer to the owner, not a fresh purchase. | renewal only |
 | **UK address lookup** — see below | Postcode → address autocomplete on the booking form | ~£5/mo (getaddress.io) or ~2p per lookup (Ideal Postcodes). **Requires a paid account — there is no free option.** |
 

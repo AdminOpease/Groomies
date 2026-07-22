@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { submitBooking, type BookingResult } from "../actions";
 import { DOG_BREEDS } from "@/lib/dog-breeds";
+import { TurnstileWidget } from "./TurnstileWidget";
 
 type Variant = {
   id: string;
@@ -527,6 +528,12 @@ export function BookingForm({
           and agree to my details being used to run this booking. Required.
         </span>
       </label>
+
+      {/* Renders nothing until NEXT_PUBLIC_TURNSTILE_SITE_KEY is set. Sits
+          inside the <form> deliberately — Turnstile injects its hidden
+          cf-turnstile-response input into the enclosing form, which is how the
+          token reaches the server action. */}
+      <TurnstileWidget />
 
       {state && !state.ok ? (
         <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
