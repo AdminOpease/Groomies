@@ -8,9 +8,11 @@ export const revalidate = 86400;
 /**
  * Flip to true to publish the drafted policy below. See privacy/page.tsx.
  *
- * Note for whoever publishes this: the drafted text and CancelButton.tsx
- * currently promise an automatic refund that nothing issues — the Stripe
- * routes are stubs. Reconcile the two before this goes live.
+ * The drafted text below describes refunds as MANUAL, which matches reality:
+ * the Stripe routes are stubs and nothing in the codebase issues a refund.
+ * Keep it that way unless automatic refunds are actually implemented — see the
+ * header comment in manage/[token]/_components/CancelButton.tsx, which has to
+ * stay consistent with this page.
  */
 const PUBLISHED = false;
 
@@ -108,7 +110,7 @@ export default async function RefundPage() {
                   <strong>
                     More than {c.refundCutoffHours} hours before your booking
                   </strong>{" "}
-                  — full refund, automatic
+                  — full refund
                 </li>
                 <li>
                   <strong>
@@ -118,8 +120,9 @@ export default async function RefundPage() {
                 </li>
               </ul>
               <p>
-                Refunds are issued to the card you paid with. Allow a few
-                business days for the money to appear on your statement.
+                Refunds are issued by hand to the card you paid with, usually
+                within one working day of you cancelling. Allow a few more days
+                for the money to appear on your statement.
               </p>
             </>
           ) : (

@@ -64,9 +64,16 @@ export default async function ManagePage({
   const { just_booked } = await searchParams;
 
   const supabase = getSupabasePublic();
-  const { data, error } = await supabase.rpc("get_booking_by_token", {
-    p_token: token,
-  });
+  const [{ data, error }, { data: settings }] = await Promise.all([
+    supabase.rpc("get_booking_by_token", { p_token: token }),
+    // Needed so the cancellation copy can point at a real address to chase a
+    // refund, rather than "reply to your confirmation email" — which is not a
+    // monitored inbox and, until Resend is wired, may never have arrived.
+    supabase
+      .from("public_business_settings")
+      .select("contact_email")
+      .maybeSingle(),
+  ]);
   if (error || !data) notFound();
 
   const b = data as BookingDetails;
@@ -230,6 +237,7 @@ export default async function ManagePage({
               refundCutoffHours={b.refund_cutoff_hours}
               eligibleForRefund={b.eligible_for_refund}
               paymentTaken={paymentTaken}
+              contactEmail={settings?.contact_email ?? null}
             />
           </div>
         </FadeIn>

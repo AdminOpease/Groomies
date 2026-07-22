@@ -3,16 +3,30 @@
 import { useState, useTransition } from "react";
 import { cancelBooking, type CancelResult } from "../actions";
 
+/**
+ * ⚠️ Refunds are processed BY HAND. Nothing in this codebase issues one.
+ *
+ * The Stripe checkout route and webhook are both stubs returning 501, and
+ * while `bookings.payment_status` can hold 'refunded', no code path ever sets
+ * it. Any copy here that promises an automatic refund is a false promise to a
+ * paying customer — the kind that produces chargebacks.
+ *
+ * If automatic refunds are ever implemented, update the wording here in the
+ * same change. Until then this must describe a manual process, because that
+ * is what actually happens: the owner refunds from the Stripe dashboard.
+ */
 export function CancelButton({
   token,
   refundCutoffHours,
   eligibleForRefund,
   paymentTaken,
+  contactEmail,
 }: {
   token: string;
   refundCutoffHours: number;
   eligibleForRefund: boolean;
   paymentTaken: boolean;
+  contactEmail: string | null;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [state, setState] = useState<CancelResult | null>(null);
@@ -35,9 +49,49 @@ export function CancelButton({
         <p className="font-medium text-stone-900">Booking cancelled.</p>
         {paymentTaken ? (
           <p className="mt-2">
-            {state.refundEligible
-              ? "Your deposit will be refunded automatically — allow a few business days for it to land."
-              : `You cancelled within ${refundCutoffHours} hours of the appointment, so the deposit isn't refundable. If there's anything we should know, please reply to your confirmation email.`}
+            {state.refundEligible ? (
+              <>
+                You cancelled in good time, so your deposit is refundable. We
+                process refunds by hand back to the card you paid with, usually
+                within one working day — allow a few more for it to appear on
+                your statement.{" "}
+                {contactEmail ? (
+                  <>
+                    If it hasn't arrived within a week, email{" "}
+                    <a
+                      href={`mailto:${contactEmail}?subject=${encodeURIComponent(
+                        "Refund query"
+                      )}`}
+                      className="text-emerald-700 underline underline-offset-2"
+                    >
+                      {contactEmail}
+                    </a>{" "}
+                    and we'll chase it.
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>
+                You cancelled within {refundCutoffHours} hours of the
+                appointment, so the deposit isn't refundable.{" "}
+                {contactEmail ? (
+                  <>
+                    If there were circumstances we should know about, email{" "}
+                    <a
+                      href={`mailto:${contactEmail}?subject=${encodeURIComponent(
+                        "Cancelled booking"
+                      )}`}
+                      className="text-emerald-700 underline underline-offset-2"
+                    >
+                      {contactEmail}
+                    </a>{" "}
+                    — we'd rather hear from you than not.
+                  </>
+                ) : (
+                  "If there were circumstances we should know about, please get in touch."
+                )}
+              </>
+            )}
           </p>
         ) : null}
       </div>
